@@ -1,7 +1,11 @@
-﻿namespace AzureFunctionCore.Models
+﻿using System.Collections.Generic;
+
+namespace AzureFunctionCore.Models
 {
     public class SensorInput
     {
-        public string Data { get; set; }
+        public string SensorId { get; set; }
+
+        public IEnumerable<double> Values { get; set; }
     }
 }

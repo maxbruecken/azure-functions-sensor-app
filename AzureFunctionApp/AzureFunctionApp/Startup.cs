@@ -1,5 +1,6 @@
 ﻿using AzureFunctionApp;
 using AzureFunctionCore.Interfaces;
+using AzureFunctionCore.Repositories;
 using AzureFunctionCore.Services;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ namespace AzureFunctionApp
         {
             builder.Services
                 .AddLogging(c => c.AddConsole())
+                .AddScoped<ISensorRepository, SensorRepository>()
                 .AddScoped<ISensorInputService, SensorInputService>();
         }
     }

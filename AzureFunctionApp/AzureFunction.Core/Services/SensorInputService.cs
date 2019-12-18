@@ -21,19 +21,49 @@ namespace AzureFunction.Core.Services
 
         public async Task<IEnumerable<AggregatedSensorData>> ProcessInputAsync(SensorInput input)
         {
-            _logger.LogInformation($"Incoming raw sensor data: sensor id {input.SensorId}");
+            _logger.LogDebug($"Incoming raw sensor data: sensor id {input.SensorId}");
+
+            if (!input.Values.Any())
+            {
+                return Enumerable.Empty<AggregatedSensorData>();
+            }
 
             var aggregatedSensorData = new List<AggregatedSensorData>();
             var sensor = await _sensorRepository.GetById(input.SensorId);
+            var timestamp = DateTimeOffset.UtcNow;
+            var mean = input.Values.Average();
             aggregatedSensorData.Add(new AggregatedSensorData
             {
                 SensorId = sensor.Id,
                 AggregationType = AggregationType.Mean,
-                TimeStamp = DateTimeOffset.UtcNow,
+                TimeStamp = timestamp,
                 SensorType = sensor.Type,
-                Value = input.Values.Average()
+                Value = mean
             });
-            // ToDo weitere Aggregationen
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorId = sensor.Id,
+                AggregationType = AggregationType.Min,
+                TimeStamp = timestamp,
+                SensorType = sensor.Type,
+                Value = input.Values.Min()
+            });
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorId = sensor.Id,
+                AggregationType = AggregationType.Max,
+                TimeStamp = timestamp,
+                SensorType = sensor.Type,
+                Value = input.Values.Max()
+            });
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorId = sensor.Id,
+                AggregationType = AggregationType.StandardDeviation,
+                TimeStamp = timestamp,
+                SensorType = sensor.Type,
+                Value = input.Values.Aggregate(0d, (a, x) => a += Math.Pow(x - mean, 2)) / (input.Values.Count() - 1)
+            });
             return aggregatedSensorData;
         }
     }

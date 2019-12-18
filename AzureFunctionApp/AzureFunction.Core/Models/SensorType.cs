@@ -1,4 +1,4 @@
-﻿namespace AzureFunctionCore.Models
+﻿namespace AzureFunction.Core.Models
 {
     public enum SensorType
     {

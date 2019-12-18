@@ -1,15 +1,13 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using AzureFunctionCore.Interfaces;
-using AzureFunctionCore.Models;
-using COP.Cloud.Azure.Core.Models;
+using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 
-namespace AzureFunctionApp
+namespace AzureFunction.App
 {
     public class SensorInputFunction
     {

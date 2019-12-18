@@ -3,9 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29609.76
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureFunctionApp", "AzureFunctionApp\AzureFunctionApp.csproj", "{D8EA7555-0AB4-4B94-8581-E1C476E545E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureFunction.App", "AzureFunction.App\AzureFunction.App.csproj", "{D8EA7555-0AB4-4B94-8581-E1C476E545E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureFunctionCore", "AzureFunctionCore\AzureFunctionCore.csproj", "{32EBA1E4-CF6B-4F9D-B91C-B3B907258CE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureFunction.Core", "AzureFunction.Core\AzureFunction.Core.csproj", "{32EBA1E4-CF6B-4F9D-B91C-B3B907258CE8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AzureFunction.Infrastructure", "AzureFunction.Infrastructure", "{099D7B19-6BBA-4FDA-A138-E149AFD0C80F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{03BCD536-3EA5-4848-AC09-0335DF8305E5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{722D1655-F669-47F0-AE41-C9AFA38B034F}"
+	ProjectSection(SolutionItems) = preProject
+		AzureFunction.Infrastructure\Pipelines\build.yml = AzureFunction.Infrastructure\Pipelines\build.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +33,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{03BCD536-3EA5-4848-AC09-0335DF8305E5} = {099D7B19-6BBA-4FDA-A138-E149AFD0C80F}
+		{722D1655-F669-47F0-AE41-C9AFA38B034F} = {099D7B19-6BBA-4FDA-A138-E149AFD0C80F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {02B119CE-E722-42E7-8301-F0C43AE1D933}

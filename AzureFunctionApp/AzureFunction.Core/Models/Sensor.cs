@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AzureFunctionCore.Models
+namespace AzureFunction.Core.Models
 {
     public class Sensor
     {

@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AzureFunctionCore.Interfaces;
-using AzureFunctionCore.Models;
-using COP.Cloud.Azure.Core.Models;
+using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Models;
 using Microsoft.Extensions.Logging;
 
-namespace AzureFunctionCore.Services
+namespace AzureFunction.Core.Services
 {
     public class SensorInputService : ISensorInputService
     {

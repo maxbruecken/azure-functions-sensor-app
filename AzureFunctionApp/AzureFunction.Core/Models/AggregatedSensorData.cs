@@ -1,7 +1,6 @@
 ﻿using System;
-using AzureFunctionCore.Models;
 
-namespace COP.Cloud.Azure.Core.Models
+namespace AzureFunction.Core.Models
 {
     public class AggregatedSensorData
     {

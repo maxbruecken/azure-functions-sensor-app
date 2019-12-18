@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using AzureFunctionCore.Models;
+using AzureFunction.Core.Models;
 
-namespace AzureFunctionCore.Interfaces
+namespace AzureFunction.Core.Interfaces
 {
     public interface ISensorRepository
     {

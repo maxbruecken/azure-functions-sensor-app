@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using AzureFunctionCore.Interfaces;
-using AzureFunctionCore.Models;
+using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Models;
 
-namespace AzureFunctionCore.Repositories
+namespace AzureFunction.Core.Repositories
 {
     public class SensorRepository : ISensorRepository
     {

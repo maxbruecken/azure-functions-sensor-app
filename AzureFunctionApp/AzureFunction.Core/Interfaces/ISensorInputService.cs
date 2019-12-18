@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using AzureFunctionCore.Models;
-using COP.Cloud.Azure.Core.Models;
+using AzureFunction.Core.Models;
 
-namespace AzureFunctionCore.Interfaces
+namespace AzureFunction.Core.Interfaces
 {
     public interface ISensorInputService
     {

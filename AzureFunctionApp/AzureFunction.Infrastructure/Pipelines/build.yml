@@ -1,0 +1,51 @@
+name: $(date:YYYY.MM.dd)$(rev:.r)
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+    - checkout: self
+      clean: true
+
+    - task: UseDotNet@2
+      displayName: 'Use .Net Core sdk 3.x'
+      inputs:
+        version: 3.1.x
+
+    - task: NuGetToolInstaller@1
+      displayName: 'Use NuGet 5.1.0'
+      inputs:
+        versionSpec: 5.1.0
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet restore'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: config
+        nugetConfigPath: EnBW.ADAZ.Common.Monitoring/NuGet.config
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish'
+      inputs:
+        command: 'publish'
+        projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
+        publishWebProjects: false
+        arguments: '--configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet test'
+      inputs:
+        command: 'test'
+        projects: '**/*.csproj'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+      condition: succeededOrFailed()

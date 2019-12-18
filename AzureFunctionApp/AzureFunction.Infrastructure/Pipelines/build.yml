@@ -1,4 +1,4 @@
-name: $(date:YYYY.MM.dd)$(rev:.r)
+name: $(date:yyyy.MM.dd)$(rev:.r)
 trigger:
   batch: true
   branches:
@@ -27,8 +27,6 @@ steps:
       inputs:
         command: 'restore'
         projects: '**/*.csproj'
-        feedsToUse: config
-        nugetConfigPath: EnBW.ADAZ.Common.Monitoring/NuGet.config
 
     - task: DotNetCoreCLI@2
       displayName: 'dotnet publish'

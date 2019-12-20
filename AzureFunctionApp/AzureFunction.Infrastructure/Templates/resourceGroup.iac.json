@@ -4,12 +4,10 @@
   "variables": {
     "functionAppStorageAccount": {
       "name": "objektforummannheim",
-      "apiVersion": "[providers('Microsoft.Storage','storageAccounts').apiVersions[0]]",
       "skuName": "Standard_LRS",
       "tier": "Standard"
     },
     "functionAppServicePlan": {
-      "apiVersion": "[providers('Microsoft.Web','serverfarms').apiVersions[0]]",
       "name": "objektforum-mannheim",
       "sku": {
         "name": "Y1",
@@ -17,11 +15,9 @@
       }
     },
     "functionAppService": {
-      "apiVersion": "[providers('Microsoft.Web','sites').apiVersions[0]]",
       "name": "objektforum-mannheim"
     },
     "functionAppApplicationInsights": {
-      "apiVersion": "[providers('microsoft.insights','components').apiVersions[0]]",
       "name": "objektforum-mannheim"
     }
   },
@@ -30,12 +26,15 @@
       "comments": "========== RESOURCE FOR STORAGE ACCOUNT ==========",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('functionAppStorageAccount').name]",
-      "apiVersion": "[variables('functionAppStorageAccount').apiVersion]",
+      "apiVersion": "2019-06-01",
       "location": "[resourceGroup().location]",
       "kind": "StorageV2",
       "sku": {
         "name": "[variables('functionAppStorageAccount').skuName]",
         "tier": "[variables('functionAppStorageAccount').tier]"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": true
       }
     },
     {
@@ -47,8 +46,8 @@
       "sku": "[variables('functionAppServicePlan').sku]",
       "kind": "linux",
       "properties": {
-        "workerSize": "3",
-        "workerSizeId": "3",
+        "workerSize": "0",
+        "workerSizeId": "0",
         "numberOfWorkers": "1",
         "reserved": true
       }
@@ -58,12 +57,10 @@
       "name": "[variables('functionAppApplicationInsights').name]",
       "type": "microsoft.insights/components",
       "location": "[resourceGroup().location]",
-      "apiVersion": "2014-08-01",
+      "apiVersion": "2015-05-01",
       "properties": {
         "ApplicationId": "[variables('functionAppApplicationInsights').name]",
-        "Application_Type": "web",
-        "Flow_Type": "Redfield",
-        "Request_Source": "IbizaAIExtension"
+        "Request_Source": "IbizaWebAppExtensionCreate"
       }
     },
     {
@@ -91,6 +88,10 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('functionAppStorageAccount').name,';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('functionAppStorageAccount').name), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "1" 
             }
           ]
         },
@@ -114,8 +115,7 @@
             "http20Enabled": true,
             "ftpsState": "FtpsOnly",
             "clientAffinityEnabled": false,
-            "minTlsVersion": "1.2",
-            "linuxFxVersion": "DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice"
+            "minTlsVersion": "1.2"
           },
           "dependsOn": [
             "[resourceId('Microsoft.Web/sites', variables('functionAppService').name)]"

@@ -93,6 +93,5 @@ stages:
                     appType: 'functionAppLinux'
                     appName: $(appName)
                     package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
-                    runtimeStack: 'DOCKER|microsoft/azure-functions-dotnet-core2.0:2.0'
+                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'
                     appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
-                    configurationStrings: '-linuxFxVersion DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'

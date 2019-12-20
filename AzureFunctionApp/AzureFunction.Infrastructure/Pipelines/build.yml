@@ -15,79 +15,88 @@ parameters:
 stages:
   - stage: Build
     displayName: Build function app
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-      - checkout: self
-        clean: true
+    jobs:
+      - job: Build app
+        displayName: Build app
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            clean: true
 
-      - task: UseDotNet@2
-        displayName: 'Use .Net Core sdk 3.x'
-        inputs:
-          version: 3.1.x
+          - task: UseDotNet@2
+            displayName: 'Use .Net Core sdk 3.x'
+            inputs:
+              version: 3.1.x
 
-      - task: NuGetToolInstaller@1
-        displayName: 'Use NuGet 5.1.0'
-        inputs:
-          versionSpec: 5.1.0
+          - task: NuGetToolInstaller@1
+            displayName: 'Use NuGet 5.1.0'
+            inputs:
+              versionSpec: 5.1.0
 
-      - task: DotNetCoreCLI@2
-        displayName: 'dotnet restore'
-        inputs:
-          command: 'restore'
-          projects: '**/*.csproj'
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet restore'
+            inputs:
+              command: 'restore'
+              projects: '**/*.csproj'
 
-      - task: DotNetCoreCLI@2
-        displayName: 'dotnet publish'
-        inputs:
-          command: 'publish'
-          projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
-          publishWebProjects: false
-          arguments: '--configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet publish'
+            inputs:
+              command: 'publish'
+              projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
+              publishWebProjects: false
+              arguments: '--configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
 
-      - task: DotNetCoreCLI@2
-        displayName: 'dotnet test'
-        inputs:
-          command: 'test'
-          projects: '**/*.csproj'
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet test'
+            inputs:
+              command: 'test'
+              projects: '**/*.csproj'
+          - task: CopyFiles@2
+            displayName: 'Copy Migration Config'
+            inputs:
+              SourceFolder: AzureFunctionApp/AzureFunction.Infrastructure/Templates 
+              Contents: resourceGroup.iac.json
+              TargetFolder: '$(build.artifactstagingdirectory)'
 
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: drop'
-        inputs:
-          PathtoPublish: '$(build.artifactstagingdirectory)'
-        condition: succeededOrFailed()
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: drop'
+            inputs:
+              PathtoPublish: '$(build.artifactstagingdirectory)'
+            condition: succeededOrFailed()
   
   - stage: Deploy
     displayName: Deploy function app
-    pool:
-      vmImage: 'ubuntu-latest'
-    environment: 'Production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-            - download: none
-            - task: AzureResourceManagerTemplateDeployment@3
-              displayName: Deploy resource group infrastructure
-              inputs:
-                deploymentScope: 'Resource Group'
-                azureResourceManagerConnection: $(azureResourceManagerConnection)
-                subscriptionId: $(subscriptionId)
-                action: 'Create Or Update Resource Group'
-                resourceGroupName: $(resourceGroupName)
-                location: $(location)
-                templateLocation: 'Linked artifact'
-                csmFile: '$(system.defaultworkingdirectory)/AzureFunctionApp/AzureFunction.Infrastructure/Templates/resourceGroup.iac.json'
-                deploymentMode: 'Incremental'
-                deploymentName: 'continuous-deployment'
+    jobs:
+      - deployment: DeployTest
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureResourceManagerTemplateDeployment@3
+                  displayName: Deploy resource group infrastructure
+                  inputs:
+                    deploymentScope: 'Resource Group'
+                    azureResourceManagerConnection: $(azureResourceManagerConnection)
+                    subscriptionId: $(subscriptionId)
+                    action: 'Create Or Update Resource Group'
+                    resourceGroupName: $(resourceGroupName)
+                    location: $(location)
+                    templateLocation: 'Linked artifact'
+                    csmFile: '$(build.artifactstagingdirectory)/resourceGroup.iac.json'
+                    deploymentMode: 'Incremental'
+                    deploymentName: 'continuous-deployment'
 
-            - task: AzureFunctionApp@1
-              displayName: Deploy function app
-              inputs:
-                azureSubscription: $(azureResourceManagerConnection)
-                appType: 'functionAppLinux'
-                appName: $(appName)
-                package: '$(build.artifactstagingdirectory)/AzureFunction.App.zip'
-                runtimeStack: 'DOCKER|microsoft/azure-functions-dotnet-core2.0:2.0'
-                appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
-                configurationStrings: '-linuxFxVersion DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'
+                - task: AzureFunctionApp@1
+                  displayName: Deploy function app
+                  inputs:
+                    azureSubscription: $(azureResourceManagerConnection)
+                    appType: 'functionAppLinux'
+                    appName: $(appName)
+                    package: '$(build.artifactstagingdirectory)/AzureFunction.App.zip'
+                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'
+                    appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'

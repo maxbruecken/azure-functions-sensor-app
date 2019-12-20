@@ -1,13 +1,14 @@
-﻿using AzureFunctionApp;
-using AzureFunctionCore.Interfaces;
-using AzureFunctionCore.Services;
+﻿using AzureFunction.App;
+using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Repositories;
+using AzureFunction.Core.Services;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 [assembly: FunctionsStartup(typeof(Startup))]
 
-namespace AzureFunctionApp
+namespace AzureFunction.App
 {
     public class Startup : FunctionsStartup
     {
@@ -15,6 +16,7 @@ namespace AzureFunctionApp
         {
             builder.Services
                 .AddLogging(c => c.AddConsole())
+                .AddScoped<ISensorRepository, SensorRepository>()
                 .AddScoped<ISensorInputService, SensorInputService>();
         }
     }

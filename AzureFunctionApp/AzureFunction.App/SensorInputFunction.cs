@@ -1,12 +1,13 @@
+using System.Threading;
 using System.Threading.Tasks;
-using AzureFunctionCore.Interfaces;
-using AzureFunctionCore.Models;
+using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 
-namespace AzureFunctionApp
+namespace AzureFunction.App
 {
     public class SensorInputFunction
     {
@@ -21,9 +22,16 @@ namespace AzureFunctionApp
 
         [FunctionName("SensorInput")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] SensorInput input)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] SensorInput input,
+            [Queue("aggregated-sensor-data")] IAsyncCollector<AggregatedSensorData> output,
+            CancellationToken cancellationToken)
         {
-            await _inputService.ProcessInputAsync(input);
+            var aggregatedSensorData = await _inputService.ProcessInputAsync(input);
+            foreach (var sensorData in aggregatedSensorData)
+            {
+                await output.AddAsync(sensorData, cancellationToken);
+            }
+            await output.FlushAsync(cancellationToken);
 
             return new OkResult();
         }

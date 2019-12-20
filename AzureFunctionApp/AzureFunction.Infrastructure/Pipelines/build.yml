@@ -5,13 +5,6 @@ trigger:
     include:
       - master
 
-parameters:
-  subscriptionId: ''
-  azureResourceManagerConnection: ''
-  resourceGroupName: ''
-  location: ''
-  appName: ''
-
 stages:
   - stage: Build
     displayName: Build function app

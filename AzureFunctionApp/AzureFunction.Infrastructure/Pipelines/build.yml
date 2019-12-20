@@ -9,7 +9,7 @@ stages:
   - stage: Build
     displayName: Build function app
     jobs:
-      - job: Build app
+      - job: Build
         displayName: Build app
         pool:
           vmImage: 'ubuntu-latest'
@@ -62,7 +62,7 @@ stages:
   - stage: Deploy
     displayName: Deploy function app
     jobs:
-      - deployment: DeployTest
+      - deployment: Deploy
         pool:
           vmImage: 'ubuntu-latest'
         environment: 'Production'

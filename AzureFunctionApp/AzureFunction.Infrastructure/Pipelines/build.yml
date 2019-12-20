@@ -47,16 +47,15 @@ stages:
               command: 'test'
               projects: '**/*.csproj'
           - task: CopyFiles@2
-            displayName: 'Copy Migration Config'
+            displayName: 'Copy resource template to artifacts'
             inputs:
               SourceFolder: AzureFunctionApp/AzureFunction.Infrastructure/Templates 
               Contents: resourceGroup.iac.json
               TargetFolder: '$(build.artifactstagingdirectory)'
 
-          - task: PublishBuildArtifacts@1
+          - publish: $(build.artifactstagingdirectory)
             displayName: 'Publish Artifact: drop'
-            inputs:
-              PathtoPublish: '$(build.artifactstagingdirectory)'
+            artifact: drop
             condition: succeededOrFailed()
   
   - stage: Deploy
@@ -70,6 +69,9 @@ stages:
           runOnce:
             deploy:
               steps:
+                - download: current
+                  artifact: drop
+
                 - task: AzureResourceManagerTemplateDeployment@3
                   displayName: Deploy resource group infrastructure
                   inputs:
@@ -80,7 +82,7 @@ stages:
                     resourceGroupName: $(resourceGroupName)
                     location: $(location)
                     templateLocation: 'Linked artifact'
-                    csmFile: '$(build.artifactstagingdirectory)/resourceGroup.iac.json'
+                    csmFile: '$(Pipeline.Workspace)/drop/resourceGroup.iac.json'
                     deploymentMode: 'Incremental'
                     deploymentName: 'continuous-deployment'
 
@@ -90,6 +92,6 @@ stages:
                     azureSubscription: $(azureResourceManagerConnection)
                     appType: 'functionAppLinux'
                     appName: $(appName)
-                    package: '$(build.artifactstagingdirectory)/AzureFunction.App.zip'
+                    package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
                     runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'
                     appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'

@@ -88,10 +88,6 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('functionAppStorageAccount').name,';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('functionAppStorageAccount').name), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
-            },
-            {
-              "name": "WEBSITE_RUN_FROM_PACKAGE",
-              "value": "1" 
             }
           ]
         },

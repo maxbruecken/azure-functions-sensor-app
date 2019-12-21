@@ -22,7 +22,7 @@ namespace AzureFunction.App
 
         [FunctionName("SensorInput")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.User, "post", Route = null)] SensorInput input,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] SensorInput input,
             [Queue("aggregated-sensor-data")] IAsyncCollector<AggregatedSensorData> output,
             CancellationToken cancellationToken)
         {

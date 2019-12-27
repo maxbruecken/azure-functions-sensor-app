@@ -11,7 +11,10 @@
       "name": "objektforum-mannheim",
       "sku": {
         "name": "Y1",
-        "tier": "Dynamic"
+        "tier": "Dynamic",
+        "size": "Y1",
+        "family": "Y",
+        "capacity": 0
       }
     },
     "functionAppService": {
@@ -44,12 +47,9 @@
       "name": "[variables('functionAppServicePlan').name]",
       "location": "[resourceGroup().location]",
       "sku": "[variables('functionAppServicePlan').sku]",
-      "kind": "linux",
       "properties": {
-        "workerSize": "0",
-        "workerSizeId": "0",
-        "numberOfWorkers": "1",
-        "reserved": true
+        "name": "[variables('functionAppServicePlan').name]",
+        "computeMode": "Dynamic"
       }
     },
     {
@@ -69,7 +69,7 @@
       "apiVersion": "2018-11-01",
       "name": "[variables('functionAppService').name]",
       "location": "[resourceGroup().location]",
-      "kind": "functionapp,linux",
+      "kind": "functionapp",
       "properties": {
         "siteConfig": {
           "appSettings": [
@@ -88,6 +88,14 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('functionAppStorageAccount').name,';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('functionAppStorageAccount').name), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('functionAppStorageAccount').name,';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('functionAppStorageAccount').name), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[variables('functionAppApplicationInsights').name]"
             }
           ]
         },

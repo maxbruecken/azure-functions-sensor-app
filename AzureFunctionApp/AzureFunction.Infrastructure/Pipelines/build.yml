@@ -60,7 +60,7 @@ stages:
   
   - stage: Deploy
     displayName: Deploy function app
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+#    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     jobs:
       - deployment: Deploy
         pool:
@@ -91,8 +91,8 @@ stages:
                   displayName: Deploy function app
                   inputs:
                     azureSubscription: $(azureResourceManagerConnection)
-                    appType: 'functionAppLinux'
+                    appType: 'functionApp'
                     appName: $(appName)
                     package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
-                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'
                     appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
+                    deploymentMethod: runFromPackage

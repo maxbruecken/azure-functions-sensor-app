@@ -27,9 +27,7 @@ namespace AzureFunction.App
         void IWebJobsStartup.Configure(IWebJobsBuilder builder)
         {
             Configure(builder);
-            var serviceProvider = builder.Services.BuildServiceProvider();
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            builder.AddExtension(new PrincipalExtensionProvider(configuration));
+            builder.AddExtension<PrincipalExtensionProvider>();
         }
     }
 }

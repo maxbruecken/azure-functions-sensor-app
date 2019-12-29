@@ -88,6 +88,14 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('functionAppStorageAccount').name,';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('functionAppStorageAccount').name), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+            },
+            {
+              "name": "JwtTokenMetadataAddress",
+              "value": "[concat('https://login.microsoftonline.com/', subscription().tenantId, '/.well-known/openid-configuration')]"
+            },
+            {
+              "name": "JwtTokenValidAudience",
+              "value": "https://objektforummannheim.onmicrosoft.com/ObjektForumMannheimFunctionApp"
             }
           ]
         },

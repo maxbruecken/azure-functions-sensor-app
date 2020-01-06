@@ -5,45 +5,94 @@ trigger:
     include:
       - master
 
-pool:
-  vmImage: 'ubuntu-latest'
+stages:
+  - stage: Build
+    displayName: Build function app
+    jobs:
+      - job: Build
+        displayName: Build app
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            clean: true
 
-steps:
-    - checkout: self
-      clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .Net Core sdk 3.x'
+            inputs:
+              version: 3.1.x
 
-    - task: UseDotNet@2
-      displayName: 'Use .Net Core sdk 3.x'
-      inputs:
-        version: 3.1.x
+          - task: NuGetToolInstaller@1
+            displayName: 'Use NuGet 5.1.0'
+            inputs:
+              versionSpec: 5.1.0
 
-    - task: NuGetToolInstaller@1
-      displayName: 'Use NuGet 5.1.0'
-      inputs:
-        versionSpec: 5.1.0
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet restore'
+            inputs:
+              command: 'restore'
+              projects: '**/*.csproj'
 
-    - task: DotNetCoreCLI@2
-      displayName: 'dotnet restore'
-      inputs:
-        command: 'restore'
-        projects: '**/*.csproj'
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet publish'
+            inputs:
+              command: 'publish'
+              projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
+              publishWebProjects: false
+              arguments: '--configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
 
-    - task: DotNetCoreCLI@2
-      displayName: 'dotnet publish'
-      inputs:
-        command: 'publish'
-        projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
-        publishWebProjects: false
-        arguments: '--configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
+          - task: DotNetCoreCLI@2
+            displayName: 'dotnet test'
+            inputs:
+              command: 'test'
+              projects: '**/*.csproj'
+          - task: CopyFiles@2
+            displayName: 'Copy resource template to artifacts'
+            inputs:
+              SourceFolder: AzureFunctionApp/AzureFunction.Infrastructure/Templates 
+              Contents: resourceGroup.iac.json
+              TargetFolder: '$(build.artifactstagingdirectory)'
 
-    - task: DotNetCoreCLI@2
-      displayName: 'dotnet test'
-      inputs:
-        command: 'test'
-        projects: '**/*.csproj'
+          - publish: $(build.artifactstagingdirectory)
+            displayName: 'Publish Artifact: drop'
+            artifact: drop
+            condition: succeededOrFailed()
+  
+  - stage: Deploy
+    displayName: Deploy function app
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    jobs:
+      - deployment: Deploy
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop
 
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: drop'
-      inputs:
-        PathtoPublish: '$(build.artifactstagingdirectory)'
-      condition: succeededOrFailed()
+                - task: AzureResourceManagerTemplateDeployment@3
+                  displayName: Deploy resource group infrastructure
+                  inputs:
+                    deploymentScope: 'Resource Group'
+                    azureResourceManagerConnection: $(azureResourceManagerConnection)
+                    subscriptionId: $(subscriptionId)
+                    action: 'Create Or Update Resource Group'
+                    resourceGroupName: $(resourceGroupName)
+                    location: $(location)
+                    templateLocation: 'Linked artifact'
+                    csmFile: '$(Pipeline.Workspace)/drop/resourceGroup.iac.json'
+                    deploymentMode: 'Incremental'
+                    deploymentName: 'continuous-deployment'
+
+                - task: AzureFunctionApp@1
+                  displayName: Deploy function app
+                  inputs:
+                    azureSubscription: $(azureResourceManagerConnection)
+                    appType: 'functionApp'
+                    appName: $(appName)
+                    package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
+                    appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
+                    deploymentMethod: runFromPackage

@@ -17,7 +17,8 @@ namespace AzureFunction.App
             builder.Services
                 .AddLogging(c => c.AddConsole())
                 .AddScoped<ISensorRepository, SensorRepository>()
-                .AddScoped<ISensorInputService, SensorInputService>();
+                .AddScoped<ISensorInputService, SensorInputService>()
+                .AddScoped<ISensorValidationService, SensorValidationService>();
         }
     }
 }

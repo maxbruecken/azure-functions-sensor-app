@@ -10,5 +10,10 @@ namespace AzureFunction.Core.Repositories
         {
             return Task.FromResult(new Sensor {Id = id, Type = SensorType.Temperature});
         }
+
+        public void Update(Sensor sensor)
+        {
+            return;
+        }
     }
 }

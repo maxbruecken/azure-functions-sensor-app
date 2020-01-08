@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
@@ -11,15 +9,19 @@ namespace AzureFunction.Core.Services
     public class SensorValidationService : ISensorValidationService
     {
         private readonly ISensorRepository _sensorRepository;
+        private readonly ISensorAlarmRepository _sensorAlarmRepository;
         private readonly ILogger<ISensorValidationService> _logger;
 
-        public SensorValidationService(ISensorRepository sensorRepository, ILogger<ISensorValidationService> logger)
+        public SensorValidationService(ISensorRepository sensorRepository, 
+            ISensorAlarmRepository sensorAlarmRepository,
+            ILogger<ISensorValidationService> logger)
         {
             _sensorRepository = sensorRepository;
+            _sensorAlarmRepository = sensorAlarmRepository;
             _logger = logger;
         }
 
-        public async Task<IEnumerable<SensorAlarm>> ProcessInputAsync(AggregatedSensorData aggregatedSensorData)
+        public async Task ValidateSensorDataAsync(AggregatedSensorData aggregatedSensorData)
         {
             _logger.LogDebug($"Incoming aggregated sensor data: sensor id {aggregatedSensorData.SensorId}");
 
@@ -28,13 +30,10 @@ namespace AzureFunction.Core.Services
             if (sensor == null)
             {
                 _logger.LogError($"No sensor found for id {aggregatedSensorData.SensorId}");
-                return Enumerable.Empty<SensorAlarm>();
+                return;
             }
             CheckSensorAndUpdateLastSeen(sensor);
-
-            var sensorAlarms = await ValidateAggregatedData(aggregatedSensorData, sensor);
-
-            return sensorAlarms;
+            await ValidateAggregatedData(aggregatedSensorData, sensor);
         }
 
         private void CheckSensorAndUpdateLastSeen(Sensor sensor)
@@ -45,29 +44,27 @@ namespace AzureFunction.Core.Services
             _sensorRepository.Update(sensor);
         }
 
-        private static async Task<IEnumerable<SensorAlarm>> ValidateAggregatedData(AggregatedSensorData aggregatedSensorData, Sensor sensor)
+        private async Task ValidateAggregatedData(AggregatedSensorData aggregatedSensorData, Sensor sensor)
         {
-            var sensorAlarms = new List<SensorAlarm>();
             if (aggregatedSensorData.Value < sensor.Min || aggregatedSensorData.Value > sensor.Max)
             {
-                await CreateSensorAlarm(sensorAlarms, sensor, AlarmStatus.InvalidData);
+                await CreateSensorAlarm(sensor, AlarmStatus.InvalidData);
             }
-            return sensorAlarms;
         }
 
-        private static async Task CreateSensorAlarm(List<SensorAlarm> sensorAlarms, Sensor s, AlarmStatus alarmStatus, bool singleton = false)
+        private async Task CreateSensorAlarm(Sensor sensor, AlarmStatus alarmStatus, bool singleton = false)
         {
             if (singleton)
             {
-                var existingAlarm = sensorAlarms.Where(a => a.SensorId == s.Id && a.StatusString == alarmStatus.ToString()).FirstOrDefault();
+                var existingAlarm = _sensorAlarmRepository.GetBySensorIdAndStatus(sensor.Id, alarmStatus);
                 if (existingAlarm != null) return;
             }
             var sensorAlarm = new SensorAlarm
             {
-                SensorId = s.Id,
+                SensorId = sensor.Id,
                 Status = alarmStatus
             };
-            await Task.Run(()=> sensorAlarms.Add(sensorAlarm));
+            await _sensorAlarmRepository.Create(sensorAlarm);
         }
 
     }

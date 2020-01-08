@@ -2,9 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 
 namespace AzureFunction.App
@@ -23,18 +21,13 @@ namespace AzureFunction.App
         [FunctionName("SensorValidation")]
         public async Task Run(
             [QueueTrigger("aggregated-sensor-data")] AggregatedSensorData aggregatedSensorData,
-            [Table("sensoralarms")] IAsyncCollector<SensorAlarm> output,
+            [Queue("validated-sensor-data")] IAsyncCollector<AggregatedSensorData> output,
             CancellationToken cancellationToken)
         {
-            var sensorAlarms = await _validationService.ProcessInputAsync(aggregatedSensorData);
+            await _validationService.ValidateSensorDataAsync(aggregatedSensorData);
 
-            foreach (var sensorAlarm in sensorAlarms)
-            {
-                await output.AddAsync(sensorAlarm, cancellationToken);
-            }
+            await output.AddAsync(aggregatedSensorData, cancellationToken);
             await output.FlushAsync(cancellationToken);
-
-            return;
         }
     }
 }

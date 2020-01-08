@@ -1,7 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Table;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace AzureFunction.Core.Models
 {
@@ -15,8 +13,8 @@ namespace AzureFunction.Core.Models
         [IgnoreProperty]
         public string SensorId
         {
-            get { return PartitionKey; }
-            set { PartitionKey = value; }
+            get => PartitionKey;
+            set => PartitionKey = value;
         }
 
         public DateTimeOffset FiredAt { get; set; } = DateTimeOffset.UtcNow;
@@ -26,8 +24,8 @@ namespace AzureFunction.Core.Models
 
         public string StatusString
         {
-            get { return Status.ToString(); }
-            set { Status = (AlarmStatus)Enum.Parse(typeof(AlarmStatus), value); }
+            get => Status.ToString();
+            set => Status = (AlarmStatus)Enum.Parse(typeof(AlarmStatus), value);
         }
     }
 

@@ -6,6 +6,7 @@ namespace AzureFunction.Core.Interfaces
     public interface ISensorRepository
     {
         Task<Sensor> GetById(string id);
-        void Update(Sensor sensor);
+        Task Insert(Sensor sensor);
+        Task Update(Sensor sensor);
     }
 }

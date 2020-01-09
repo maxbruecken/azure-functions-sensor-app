@@ -32,16 +32,16 @@ namespace AzureFunction.Core.Services
                 _logger.LogError($"No sensor found for id {aggregatedSensorData.SensorId}");
                 return;
             }
-            CheckSensorAndUpdateLastSeen(sensor);
+            await CheckSensorAndUpdateLastSeen(sensor);
             await ValidateAggregatedData(aggregatedSensorData, sensor);
         }
 
-        private void CheckSensorAndUpdateLastSeen(Sensor sensor)
+        private async Task CheckSensorAndUpdateLastSeen(Sensor sensor)
         {
             var now = DateTimeOffset.UtcNow;
             if (sensor.LastSeen < now)
                 sensor.LastSeen = now;
-            _sensorRepository.Update(sensor);
+            await _sensorRepository.Update(sensor);
         }
 
         private async Task ValidateAggregatedData(AggregatedSensorData aggregatedSensorData, Sensor sensor)
@@ -64,7 +64,7 @@ namespace AzureFunction.Core.Services
                 SensorId = sensor.Id,
                 Status = alarmStatus
             };
-            await _sensorAlarmRepository.Create(sensorAlarm);
+            await _sensorAlarmRepository.Insert(sensorAlarm);
         }
 
     }

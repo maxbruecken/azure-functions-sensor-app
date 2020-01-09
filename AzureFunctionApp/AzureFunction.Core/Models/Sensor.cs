@@ -1,12 +1,30 @@
 ﻿using System;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace AzureFunction.Core.Models
 {
-    public class Sensor
+    public class Sensor : TableEntity
     {
-        public string Id { get; set; }
+        public Sensor()
+        {
+            RowKey = string.Empty;
+        }
 
+        [IgnoreProperty]
+        public string Id
+        {
+            get => PartitionKey;
+            set => PartitionKey = value;
+        }
+
+        [IgnoreProperty]
         public SensorType Type { get; set; }
+
+        public string SensorTypeString
+        {
+            get => $"{Type:G}";
+            set => Type = (SensorType) Enum.Parse(typeof(SensorType), value, true);
+        }
 
         public double Min { get; set; }
 

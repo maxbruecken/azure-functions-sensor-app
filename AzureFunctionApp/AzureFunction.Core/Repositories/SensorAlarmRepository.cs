@@ -30,7 +30,7 @@ namespace AzureFunction.Core.Repositories
             return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
         }
 
-        public async Task Create(SensorAlarm alarm)
+        public async Task Insert(SensorAlarm alarm)
         {
             var insertOperation = TableOperation.Insert(alarm);
             var table = _client.GetTableReference(_tableName);
@@ -42,6 +42,7 @@ namespace AzureFunction.Core.Repositories
         {
             var mergeOperation = TableOperation.Merge(alarm);
             var table = _client.GetTableReference(_tableName);
+            alarm.ETag = "*";
             await table.CreateIfNotExistsAsync();
             await table.ExecuteAsync(mergeOperation);
         }

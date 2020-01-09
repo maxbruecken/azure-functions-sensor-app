@@ -24,7 +24,7 @@ namespace AzureFunction.Core.Models
 
         public string StatusString
         {
-            get => Status.ToString();
+            get => $"{Status:G}";
             set => Status = (AlarmStatus)Enum.Parse(typeof(AlarmStatus), value);
         }
     }

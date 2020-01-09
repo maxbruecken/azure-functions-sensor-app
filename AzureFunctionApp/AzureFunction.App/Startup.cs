@@ -3,6 +3,7 @@ using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Repositories;
 using AzureFunction.Core.Services;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +18,10 @@ namespace AzureFunction.App
             builder.Services
                 .AddLogging(c => c.AddConsole())
                 .AddScoped<ISensorRepository, SensorRepository>()
-                .AddScoped<ISensorInputService, SensorInputService>();
+                .AddScoped<ISensorAlarmRepository>(p => 
+                    new SensorAlarmRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensoralarms"))
+                .AddScoped<ISensorInputService, SensorInputService>()
+                .AddScoped<ISensorValidationService, SensorValidationService>();
         }
     }
 }

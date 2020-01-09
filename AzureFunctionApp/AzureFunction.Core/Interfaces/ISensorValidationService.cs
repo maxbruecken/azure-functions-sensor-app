@@ -3,9 +3,8 @@ using AzureFunction.Core.Models;
 
 namespace AzureFunction.Core.Interfaces
 {
-    public interface ISensorRepository
+    public interface ISensorValidationService
     {
-        Task<Sensor> GetById(string id);
-        void Update(Sensor sensor);
+        Task ValidateSensorDataAsync(AggregatedSensorData input);
     }
 }

@@ -22,6 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureFunction.Tests", "AzureFunction.Tests\AzureFunction.Tests.csproj", "{D994EAF8-2048-4017-B30A-894966D52CDE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureFunction.Start", "AzureFunction.Start\AzureFunction.Start.csproj", "{49DF142D-70FF-4FB6-A0C5-274A5DEBFD56}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{D994EAF8-2048-4017-B30A-894966D52CDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D994EAF8-2048-4017-B30A-894966D52CDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D994EAF8-2048-4017-B30A-894966D52CDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49DF142D-70FF-4FB6-A0C5-274A5DEBFD56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49DF142D-70FF-4FB6-A0C5-274A5DEBFD56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49DF142D-70FF-4FB6-A0C5-274A5DEBFD56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49DF142D-70FF-4FB6-A0C5-274A5DEBFD56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,7 +1,11 @@
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using AzureFunction.App.Authentication;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -23,9 +27,14 @@ namespace AzureFunction.App
         [FunctionName("SensorInput")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] SensorInput input,
+            [Principal] ClaimsPrincipal principal,
             [Queue("aggregated-sensor-data")] IAsyncCollector<AggregatedSensorData> output,
             CancellationToken cancellationToken)
         {
+            if (!(principal?.Identity?.IsAuthenticated).GetValueOrDefault(false))
+            {
+                return new UnauthorizedResult();
+            }
             var aggregatedSensorData = await _inputService.ProcessInputAsync(input);
             foreach (var sensorData in aggregatedSensorData)
             {

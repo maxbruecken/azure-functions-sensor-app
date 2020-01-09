@@ -30,7 +30,7 @@ namespace AzureFunction.Start
         static async Task Main()
         {
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", false)
+                .AddJsonFile("local.settings.json", false)
                 .Build();
 
             var random = new Random();

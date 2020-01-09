@@ -21,7 +21,10 @@ namespace AzureFunction.App
             builder.Services
                 .AddLogging(c => c.AddConsole())
                 .AddScoped<ISensorRepository, SensorRepository>()
-                .AddScoped<ISensorInputService, SensorInputService>();
+                .AddScoped<ISensorAlarmRepository>(p => 
+                    new SensorAlarmRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensoralarms"))
+                .AddScoped<ISensorInputService, SensorInputService>()
+                .AddScoped<ISensorValidationService, SensorValidationService>();
         }
 
         void IWebJobsStartup.Configure(IWebJobsBuilder builder)

@@ -91,8 +91,8 @@ stages:
                   displayName: Deploy function app
                   inputs:
                     azureSubscription: $(azureResourceManagerConnection)
-                    appType: 'functionApp'
+                    appType: 'functionAppLinux'
                     appName: $(appName)
                     package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
                     appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
-                    deploymentMethod: runFromPackage
+                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'

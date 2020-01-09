@@ -17,7 +17,8 @@ namespace AzureFunction.App
         {
             builder.Services
                 .AddLogging(c => c.AddConsole())
-                .AddScoped<ISensorRepository, SensorRepository>()
+                .AddScoped<ISensorRepository>(p => 
+                    new SensorRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensors"))
                 .AddScoped<ISensorAlarmRepository>(p => 
                     new SensorAlarmRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensoralarms"))
                 .AddScoped<ISensorInputService, SensorInputService>()

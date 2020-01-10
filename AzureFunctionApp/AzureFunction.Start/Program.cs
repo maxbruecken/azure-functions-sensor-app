@@ -1,10 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using AzureFunction.Core.Models;
+using AzureFunction.Core.Repositories;
+using Microsoft.Azure.Cosmos.Table;
+using Microsoft.Azure.Documents.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json;
@@ -13,11 +19,38 @@ namespace AzureFunction.Start
 {
     class Program
     {
+        private const int SensorCount = 10;
+        private const int SensorInputCount = 10000;
+        
+        private const int MinSensorTemperature = -60;
+        private const int MaxSensorTemperature = 80;
+        private const int MinSensorVoltage = 300;
+        private const int MaxSensorVoltage = 400;
+
         static async Task Main()
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("local.settings.json", false)
                 .Build();
+
+            var random = new Random();
+            var sensorRepository = new SensorRepository(configuration["AzureWebJobsStorage"], "sensors");
+            var sensorTable = CloudStorageAccount.Parse(configuration["AzureWebJobsStorage"]).CreateCloudTableClient().GetTableReference("sensors");
+            await sensorTable.CreateIfNotExistsAsync();
+            var sensors = sensorTable.CreateQuery<Sensor>().ToList();
+            while(sensors.Count < SensorCount)
+            {
+                var sensorType = random.Next(0, 2) == 0 ? SensorType.Temperature : SensorType.Voltage;
+                var sensor = new Sensor
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Type = sensorType,
+                    Min = sensorType == SensorType.Temperature ? MinSensorTemperature : MinSensorVoltage,
+                    Max = sensorType == SensorType.Temperature ? MaxSensorTemperature : MaxSensorVoltage
+                };
+                await sensorRepository.Insert(sensor);
+                sensors.Add(sensor);
+            }
             
             var clientApplication = ConfidentialClientApplicationBuilder
                 .Create(configuration["ClientId"])
@@ -31,22 +64,34 @@ namespace AzureFunction.Start
             
             var httpClient = new HttpClient
             {
-                DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken) }
+                DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken) },
+                Timeout = TimeSpan.FromMinutes(5)
             };
 
             var uri = new Uri($"{configuration["ApplicationUri"]}api/SensorInput");
-            var tasks = Enumerable.Repeat(new SensorInput
+            var tasks = new List<Task>();
+            for (var i = 0; i < SensorInputCount; i++)
+            {
+                var sensor = sensors[random.Next(0, sensors.Count)];
+                var sensorInput = new SensorInput
                 {
-                    SensorId = "test",
-                    Values = new[] {1d, 2d, 3d}
-                }, 10)
-                .Select(i =>
-                {
-                    var content = new StringContent(JsonConvert.SerializeObject(i), Encoding.UTF8, "application/json");
-                    return httpClient.PostAsync(uri, content);
-                });
+                    SensorId = sensor.Id,
+                    Values = Enumerable.Repeat(0, 10).Select(_ => CreateSensorValue(sensor, random)).ToList()
+                };
+                var content = new StringContent(JsonConvert.SerializeObject(sensorInput), Encoding.UTF8, "application/json");
+                tasks.Add(httpClient.PostAsync(uri, content));
+            }
 
             await Task.WhenAll(tasks);
+            Console.Out.WriteLine($"Sent {tasks.Count()} sensor inputs for {sensors.Count} sensors. {tasks.Count(t => t.IsCompletedSuccessfully)} tasks completed successfully, {tasks.Count(t => t.IsFaulted)} tasks failed.");
+        }
+
+        private static double CreateSensorValue(Sensor sensor, Random random)
+        {
+            var x = random.NextDouble();
+            return sensor.Type == SensorType.Temperature 
+                ? MinSensorTemperature + x * (MaxSensorTemperature - MinSensorTemperature)
+                : MinSensorVoltage + x * (MaxSensorVoltage - MinSensorVoltage);
         }
     }
 }

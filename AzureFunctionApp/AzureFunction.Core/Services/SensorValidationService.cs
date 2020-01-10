@@ -46,6 +46,10 @@ namespace AzureFunction.Core.Services
 
         private async Task ValidateAggregatedData(AggregatedSensorData aggregatedSensorData, Sensor sensor)
         {
+            if (aggregatedSensorData.AggregationType != AggregationType.Min && aggregatedSensorData.AggregationType != AggregationType.Max)
+            {
+                return;
+            }
             if (aggregatedSensorData.Value < sensor.Min || aggregatedSensorData.Value > sensor.Max)
             {
                 await CreateSensorAlarm(sensor, AlarmStatus.InvalidData);

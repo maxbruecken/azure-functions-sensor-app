@@ -20,7 +20,7 @@ namespace AzureFunction.Start
     class Program
     {
         private const int SensorCount = 10;
-        private const int SensorInputCount = 10000;
+        private const int SensorInputCount = 1000;
         
         private const int MinSensorTemperature = -60;
         private const int MaxSensorTemperature = 80;
@@ -31,13 +31,12 @@ namespace AzureFunction.Start
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("local.settings.json", false)
+                //.AddJsonFile("appsettings.json")
                 .Build();
 
             var random = new Random();
             var sensorRepository = new SensorRepository(configuration["AzureWebJobsStorage"], "sensors");
-            var sensorTable = CloudStorageAccount.Parse(configuration["AzureWebJobsStorage"]).CreateCloudTableClient().GetTableReference("sensors");
-            await sensorTable.CreateIfNotExistsAsync();
-            var sensors = sensorTable.CreateQuery<Sensor>().ToList();
+            var sensors = (await sensorRepository.GetAll()).ToList();
             while(sensors.Count < SensorCount)
             {
                 var sensorType = random.Next(0, 2) == 0 ? SensorType.Temperature : SensorType.Voltage;

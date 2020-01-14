@@ -43,8 +43,22 @@ namespace AzureFunction.Core.Services.Tests
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 
             await service.CheckSensorsAndAlarms();
-
             A.CallTo(() => sensorAlarmRepository.Insert(A<SensorAlarm>.That.Matches(a => a.Status == AlarmStatus.Dead))).MustHaveHappened();
+        }
+
+        [TestMethod()]
+        public async Task CheckObsoleteAlarmsTest()
+        {
+            var sensorRepository = A.Fake<ISensorRepository>();
+            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor { Id = "test", Type = SensorType.Temperature, LastSeen = DateTimeOffset.UtcNow } });
+            ISensorAlarmRepository sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
+            SensorAlarm alarm = new SensorAlarm { SensorId = "test", Status = AlarmStatus.Dead };
+            A.CallTo(() => sensorAlarmRepository.GetBySensorIdAndStatus("test", AlarmStatus.Dead)).Returns(alarm);
+
+            var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
+
+            await service.CheckSensorsAndAlarms();
+            A.CallTo(() => sensorAlarmRepository.Delete(alarm)).MustHaveHappened();
         }
     }
 }

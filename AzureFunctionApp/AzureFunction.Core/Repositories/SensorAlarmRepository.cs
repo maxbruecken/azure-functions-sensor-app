@@ -46,5 +46,13 @@ namespace AzureFunction.Core.Repositories
             await table.CreateIfNotExistsAsync();
             await table.ExecuteAsync(mergeOperation);
         }
+
+        public async Task Delete(SensorAlarm sensorAlarm)
+        {
+            var deleteOperation = TableOperation.Delete(sensorAlarm);
+            var table = _client.GetTableReference(_tableName);
+            await table.CreateIfNotExistsAsync();
+            await table.ExecuteAsync(deleteOperation);
+        }
     }
 }

@@ -29,5 +29,11 @@ namespace AzureFunction.App
             await output.AddAsync(aggregatedSensorData, cancellationToken);
             await output.FlushAsync(cancellationToken);
         }
+
+        [FunctionName("InactiveSensors")]
+        public async Task GetInactiveSensors([TimerTrigger("0 */1 * * * *")] TimerInfo timer)
+        {
+            await _validationService.CheckSensorsAndAlarms();
+        }
     }
 }

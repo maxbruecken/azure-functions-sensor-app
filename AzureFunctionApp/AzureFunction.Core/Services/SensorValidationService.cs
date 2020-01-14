@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
@@ -12,7 +14,7 @@ namespace AzureFunction.Core.Services
         private readonly ISensorAlarmRepository _sensorAlarmRepository;
         private readonly ILogger<ISensorValidationService> _logger;
 
-        public SensorValidationService(ISensorRepository sensorRepository, 
+        public SensorValidationService(ISensorRepository sensorRepository,
             ISensorAlarmRepository sensorAlarmRepository,
             ILogger<ISensorValidationService> logger)
         {
@@ -34,6 +36,36 @@ namespace AzureFunction.Core.Services
             }
             await CheckSensorAndUpdateLastSeen(sensor);
             await ValidateAggregatedData(aggregatedSensorData, sensor);
+        }
+
+        public async Task CheckSensorsAndAlarms()
+        {
+            var deadLine = DateTimeOffset.UtcNow.AddMinutes(-5);
+            var sensors = await _sensorRepository.GetAll();
+            await FireAlarmsForDeadSensors(sensors, deadLine);
+            await RemoveObsoleteAlarms(sensors, deadLine);
+        }
+
+        private async Task RemoveObsoleteAlarms(IEnumerable<Sensor> sensors, DateTimeOffset deadLine)
+        {
+            var tasks = sensors
+                .Where(s => s.LastSeen > deadLine)
+                .ToList()
+                .Select(async s =>
+                {
+                    var sensorAlarm = await _sensorAlarmRepository.GetBySensorIdAndStatus(s.Id, AlarmStatus.Dead);
+                    await _sensorAlarmRepository.Delete(sensorAlarm);
+                });
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        private async Task FireAlarmsForDeadSensors(IEnumerable<Sensor> sensors, DateTimeOffset deadLine)
+        {
+            var tasks = sensors
+                .Where(s => s.LastSeen < deadLine)
+                .ToList()
+                .Select(s => CreateSensorAlarm(s, AlarmStatus.Dead, true));
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         private async Task CheckSensorAndUpdateLastSeen(Sensor sensor)
@@ -60,7 +92,7 @@ namespace AzureFunction.Core.Services
         {
             if (singleton)
             {
-                var existingAlarm = _sensorAlarmRepository.GetBySensorIdAndStatus(sensor.Id, alarmStatus);
+                var existingAlarm = await _sensorAlarmRepository.GetBySensorIdAndStatus(sensor.Id, alarmStatus);
                 if (existingAlarm != null) return;
             }
             var sensorAlarm = new SensorAlarm

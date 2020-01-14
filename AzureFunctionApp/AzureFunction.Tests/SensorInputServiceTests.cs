@@ -18,10 +18,10 @@ namespace AzureFunction.Tests
         public async Task CreatesAllAggregations()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetById("test")).Returns(new Sensor {Id = "test", Type = SensorType.Temperature});
+            A.CallTo(() => sensorRepository.GetById("test")).Returns(new Sensor { Id = "test", Type = SensorType.Temperature });
             var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
-            var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput {SensorId = "test", Values = new List<double> {1, 2, 3}});
+            var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput { SensorId = "test", Values = new List<double> { 1, 2, 3 } });
 
             aggregatedSensorData.Should().HaveCount(4);
             aggregatedSensorData.Should().Contain(x => x.AggregationType == AggregationType.Mean);
@@ -37,7 +37,7 @@ namespace AzureFunction.Tests
             A.CallTo(() => sensorRepository.GetById("test")).Returns(new Sensor { Id = "test", Type = SensorType.Temperature });
             var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
-            var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput {SensorId = "test", Values = new List<double> {1, 2, 3}});
+            var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput { SensorId = "test", Values = new List<double> { 1, 2, 3 } });
 
             aggregatedSensorData.First(a => a.AggregationType == AggregationType.Mean).Value.Should().Be(2d);
             aggregatedSensorData.First(a => a.AggregationType == AggregationType.Min).Value.Should().Be(1d);
@@ -52,7 +52,7 @@ namespace AzureFunction.Tests
             A.CallTo(() => sensorRepository.GetById("test")).Returns(new Sensor { Id = "test", Type = SensorType.Temperature });
             var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
-            var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput {SensorId = "test", Values = new List<double>()});
+            var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput { SensorId = "test", Values = new List<double>() });
 
             aggregatedSensorData.Should().BeEmpty();
         }

@@ -8,5 +8,6 @@ namespace AzureFunction.Core.Interfaces
         Task<SensorAlarm> GetBySensorIdAndStatus(string sensorId, AlarmStatus status);
         Task Insert(SensorAlarm alarm);
         Task Update(SensorAlarm alarm);
+        Task Delete(SensorAlarm sensorAlarm);
     }
 }

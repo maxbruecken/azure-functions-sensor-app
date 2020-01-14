@@ -88,7 +88,7 @@ namespace AzureFunction.Core.Services
         {
             if (singleton)
             {
-                var existingAlarm = _sensorAlarmRepository.GetBySensorIdAndStatus(sensor.Id, alarmStatus);
+                var existingAlarm = await _sensorAlarmRepository.GetBySensorIdAndStatus(sensor.Id, alarmStatus);
                 if (existingAlarm != null) return;
             }
             var sensorAlarm = new SensorAlarm

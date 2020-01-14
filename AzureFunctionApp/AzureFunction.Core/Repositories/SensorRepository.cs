@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
@@ -23,6 +24,14 @@ namespace AzureFunction.Core.Repositories
             await table.CreateIfNotExistsAsync();
             var tableQuery = new TableQuery<Sensor>().Where(TableQuery.GenerateFilterCondition(nameof(Sensor.PartitionKey), QueryComparisons.Equal, id));
             return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
+        }
+
+        public async Task<IEnumerable<Sensor>> GetAll()
+        {
+            var table = _client.GetTableReference(_tableName);
+            await table.CreateIfNotExistsAsync();
+            var tableQuery = new TableQuery<Sensor>();
+            return await table.ExecuteQuerySegmentedAsync(tableQuery, null);
         }
 
         public async Task Insert(Sensor sensor)

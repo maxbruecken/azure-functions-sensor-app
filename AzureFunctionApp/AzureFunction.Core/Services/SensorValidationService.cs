@@ -38,7 +38,7 @@ namespace AzureFunction.Core.Services
             await ValidateAggregatedData(aggregatedSensorData, sensor);
         }
 
-        public async Task CheckSensorsAndAlarms()
+        public async Task CheckSensorsAndAlarmsAsync()
         {
             var deadLine = DateTimeOffset.UtcNow.AddMinutes(-5);
             var sensors = await _sensorRepository.GetAll();
@@ -54,6 +54,10 @@ namespace AzureFunction.Core.Services
                 .Select(async s =>
                 {
                     var sensorAlarm = await _sensorAlarmRepository.GetBySensorIdAndStatus(s.Id, AlarmStatus.Dead);
+                    if (sensorAlarm == null)
+                    {
+                        return;
+                    }
                     await _sensorAlarmRepository.Delete(sensorAlarm);
                 });
             await Task.WhenAll(tasks).ConfigureAwait(false);

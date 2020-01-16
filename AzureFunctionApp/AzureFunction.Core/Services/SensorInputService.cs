@@ -36,7 +36,7 @@ namespace AzureFunction.Core.Services
             {
                 SensorId = sensor.Id,
                 AggregationType = AggregationType.Mean,
-                TimeStamp = timestamp,
+                CreatedAt = timestamp,
                 SensorType = sensor.Type,
                 Value = mean
             });
@@ -44,7 +44,7 @@ namespace AzureFunction.Core.Services
             {
                 SensorId = sensor.Id,
                 AggregationType = AggregationType.Min,
-                TimeStamp = timestamp,
+                CreatedAt = timestamp,
                 SensorType = sensor.Type,
                 Value = input.Values.Min()
             });
@@ -52,7 +52,7 @@ namespace AzureFunction.Core.Services
             {
                 SensorId = sensor.Id,
                 AggregationType = AggregationType.Max,
-                TimeStamp = timestamp,
+                CreatedAt = timestamp,
                 SensorType = sensor.Type,
                 Value = input.Values.Max()
             });
@@ -60,7 +60,7 @@ namespace AzureFunction.Core.Services
             {
                 SensorId = sensor.Id,
                 AggregationType = AggregationType.StandardDeviation,
-                TimeStamp = timestamp,
+                CreatedAt = timestamp,
                 SensorType = sensor.Type,
                 Value = input.Values.Aggregate(0d, (a, x) => a += Math.Pow(x - mean, 2)) / (input.Values.Count() - 1)
             });

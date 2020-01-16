@@ -1,16 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using AzureFunction.Core.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using FakeItEasy;
+﻿using System;
 using System.Threading.Tasks;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
-using Microsoft.Extensions.Logging;
+using AzureFunction.Core.Services;
+using FakeItEasy;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AzureFunction.Core.Services.Tests
+namespace AzureFunction.Tests.Services
 {
     [TestClass()]
     public class SensorValidationServiceTests
@@ -42,7 +40,7 @@ namespace AzureFunction.Core.Services.Tests
 
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 
-            await service.CheckSensorsAndAlarms();
+            await service.CheckSensorsAndAlarmsAsync();
             A.CallTo(() => sensorAlarmRepository.Insert(A<SensorAlarm>.That.Matches(a => a.Status == AlarmStatus.Dead))).MustHaveHappened();
         }
 
@@ -57,8 +55,24 @@ namespace AzureFunction.Core.Services.Tests
 
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 
-            await service.CheckSensorsAndAlarms();
+            await service.CheckSensorsAndAlarmsAsync();
             A.CallTo(() => sensorAlarmRepository.Delete(alarm)).MustHaveHappened();
+        }
+        
+        [TestMethod]
+        public async Task CheckObsoleteAlarmsResultsNullTest()
+        {
+            var sensorRepository = A.Fake<ISensorRepository>();
+            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor { Id = "test", Type = SensorType.Temperature, LastSeen = DateTimeOffset.UtcNow } });
+            ISensorAlarmRepository sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
+            SensorAlarm alarm = new SensorAlarm { SensorId = "test", Status = AlarmStatus.Dead };
+            A.CallTo(() => sensorAlarmRepository.GetBySensorIdAndStatus("test", AlarmStatus.Dead)).Returns((SensorAlarm)null);
+
+            var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
+
+            await service.CheckSensorsAndAlarmsAsync();
+            
+            A.CallTo(() => sensorAlarmRepository.Delete(null)).MustNotHaveHappened();
         }
     }
 }

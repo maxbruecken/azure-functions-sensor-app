@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureFunction.App;
@@ -13,7 +12,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AzureFunction.Tests
+namespace AzureFunction.Tests.Functions
 {
     [TestClass]
     public class SensorInputFunctionTests

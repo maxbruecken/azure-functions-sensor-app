@@ -6,6 +6,6 @@ namespace AzureFunction.Core.Interfaces
     public interface ISensorValidationService
     {
         Task ValidateSensorDataAsync(AggregatedSensorData input);
-        Task CheckSensorsAndAlarms();
+        Task CheckSensorsAndAlarmsAsync();
     }
 }

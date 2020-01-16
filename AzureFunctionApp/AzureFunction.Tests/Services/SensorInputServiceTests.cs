@@ -9,7 +9,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AzureFunction.Tests
+namespace AzureFunction.Tests.Services
 {
     [TestClass]
     public class SensorInputServiceTests

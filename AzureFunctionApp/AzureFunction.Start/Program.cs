@@ -20,7 +20,7 @@ namespace AzureFunction.Start
     class Program
     {
         private const int SensorCount = 10;
-        private const int SensorInputCount = 1000;
+        private const int SensorInputCount = 2;
         
         private const int MinSensorTemperature = -60;
         private const int MaxSensorTemperature = 80;
@@ -68,7 +68,7 @@ namespace AzureFunction.Start
             };
 
             var uri = new Uri($"{configuration["ApplicationUri"]}api/SensorInput");
-            var tasks = new List<Task>();
+            var tasks = new List<Task<HttpResponseMessage>>();
             for (var i = 0; i < SensorInputCount; i++)
             {
                 var sensor = sensors[random.Next(0, sensors.Count)];
@@ -81,8 +81,8 @@ namespace AzureFunction.Start
                 tasks.Add(httpClient.PostAsync(uri, content));
             }
 
-            await Task.WhenAll(tasks);
-            Console.Out.WriteLine($"Sent {tasks.Count()} sensor inputs for {sensors.Count} sensors. {tasks.Count(t => t.IsCompletedSuccessfully)} tasks completed successfully, {tasks.Count(t => t.IsFaulted)} tasks failed.");
+            var responses = await Task.WhenAll(tasks);
+            Console.Out.WriteLine($"Sent {tasks.Count()} sensor inputs for {sensors.Count} sensors. {responses.Count(r => r.IsSuccessStatusCode)} tasks completed successfully, {responses.Count(r => !r.IsSuccessStatusCode)} tasks failed.");
         }
 
         private static double CreateSensorValue(Sensor sensor, Random random)

@@ -33,7 +33,7 @@ namespace AzureFunction.App
         [FunctionName("InactiveSensors")]
         public async Task GetInactiveSensors([TimerTrigger("0 */1 * * * *")] TimerInfo timer)
         {
-            await _validationService.CheckSensorsAndAlarms();
+            await _validationService.CheckSensorsAndAlarmsAsync();
         }
     }
 }

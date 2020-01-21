@@ -20,7 +20,7 @@ namespace AzureFunction.Start
     class Program
     {
         private const int SensorCount = 10;
-        private const int SensorInputCount = 2;
+        private const int SensorInputCount = 1000;
         
         private const int MinSensorTemperature = -60;
         private const int MaxSensorTemperature = 80;
@@ -39,7 +39,7 @@ namespace AzureFunction.Start
             var sensors = (await sensorRepository.GetAll()).ToList();
             while(sensors.Count < SensorCount)
             {
-                var sensorType = random.Next(0, 2) == 0 ? SensorType.Temperature : SensorType.Voltage;
+                var sensorType = (SensorType)random.Next(0, 1);
                 var sensor = new Sensor
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -78,10 +78,15 @@ namespace AzureFunction.Start
                     Values = Enumerable.Repeat(0, 10).Select(_ => CreateSensorValue(sensor, random)).ToList()
                 };
                 var content = new StringContent(JsonConvert.SerializeObject(sensorInput), Encoding.UTF8, "application/json");
-                tasks.Add(httpClient.PostAsync(uri, content));
+                var task = httpClient.PostAsync(uri, content);
+                tasks.Add(task);
+                await task;
             }
 
             var responses = await Task.WhenAll(tasks);
+
+            var errors = responses.Where(r => !r.IsSuccessStatusCode).ToList();
+            
             Console.Out.WriteLine($"Sent {tasks.Count()} sensor inputs for {sensors.Count} sensors. {responses.Count(r => r.IsSuccessStatusCode)} tasks completed successfully, {responses.Count(r => !r.IsSuccessStatusCode)} tasks failed.");
         }
 

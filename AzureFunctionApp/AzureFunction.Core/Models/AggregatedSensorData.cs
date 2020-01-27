@@ -11,7 +11,7 @@ namespace AzureFunction.Core.Models
         }
         
         [IgnoreProperty]
-        public string SensorId
+        public string SensorBoxId
         {
             get => PartitionKey;
             set => PartitionKey = value;

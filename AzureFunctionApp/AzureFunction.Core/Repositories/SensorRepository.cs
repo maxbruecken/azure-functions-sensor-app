@@ -18,11 +18,16 @@ namespace AzureFunction.Core.Repositories
             _client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
         }
 
-        public async Task<Sensor> GetById(string id)
+        public async Task<Sensor> GetByBoxIdAndType(string boxId, SensorType type)
         {
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
-            var tableQuery = new TableQuery<Sensor>().Where(TableQuery.GenerateFilterCondition(nameof(Sensor.PartitionKey), QueryComparisons.Equal, id));
+            var tableQuery = new TableQuery<Sensor>().Where(
+                TableQuery.CombineFilters(
+                TableQuery.GenerateFilterCondition(nameof(Sensor.PartitionKey), QueryComparisons.Equal, boxId),
+                TableOperators.And,
+                TableQuery.GenerateFilterCondition(nameof(Sensor.RowKey), QueryComparisons.Equal, $"{type:G}")
+                ));
             return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
         }
 

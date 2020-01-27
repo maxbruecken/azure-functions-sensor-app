@@ -25,13 +25,13 @@ namespace AzureFunction.Core.Services
 
         public async Task ValidateSensorDataAsync(AggregatedSensorData aggregatedSensorData)
         {
-            _logger.LogDebug($"Incoming aggregated sensor data: sensor id {aggregatedSensorData.SensorId}");
+            _logger.LogDebug($"Incoming aggregated sensor data: sensor id {aggregatedSensorData.SensorBoxId}");
 
-            var sensor = await _sensorRepository.GetById(aggregatedSensorData.SensorId);
+            var sensor = await _sensorRepository.GetByBoxIdAndType(aggregatedSensorData.SensorBoxId, aggregatedSensorData.SensorType);
 
             if (sensor == null)
             {
-                _logger.LogError($"No sensor found for id {aggregatedSensorData.SensorId}");
+                _logger.LogError($"No sensor found for id {aggregatedSensorData.SensorBoxId}");
                 return;
             }
             await CheckSensorAndUpdateLastSeen(sensor);
@@ -53,7 +53,7 @@ namespace AzureFunction.Core.Services
                 .ToList()
                 .Select(async s =>
                 {
-                    var sensorAlarm = await _sensorAlarmRepository.GetBySensorIdAndStatus(s.Id, AlarmStatus.Dead);
+                    var sensorAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus(s.BoxId, s.Type, AlarmStatus.Dead);
                     if (sensorAlarm == null)
                     {
                         return;
@@ -75,8 +75,7 @@ namespace AzureFunction.Core.Services
         private async Task CheckSensorAndUpdateLastSeen(Sensor sensor)
         {
             var now = DateTimeOffset.UtcNow;
-            if (sensor.LastSeen < now)
-                sensor.LastSeen = now;
+            if (sensor.LastSeen < now) sensor.LastSeen = now;
             await _sensorRepository.Update(sensor);
         }
 
@@ -96,12 +95,13 @@ namespace AzureFunction.Core.Services
         {
             if (singleton)
             {
-                var existingAlarm = await _sensorAlarmRepository.GetBySensorIdAndStatus(sensor.Id, alarmStatus);
+                var existingAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus(sensor.BoxId, sensor.Type, alarmStatus);
                 if (existingAlarm != null) return;
             }
             var sensorAlarm = new SensorAlarm
             {
-                SensorId = sensor.Id,
+                SensorBoxId = sensor.BoxId,
+                SensorType = sensor.Type,
                 Status = alarmStatus
             };
             await _sensorAlarmRepository.Insert(sensorAlarm);

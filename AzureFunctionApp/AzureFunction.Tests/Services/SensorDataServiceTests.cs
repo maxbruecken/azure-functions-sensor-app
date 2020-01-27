@@ -18,7 +18,7 @@ namespace AzureFunction.Tests.Services
             var service = new SensorDataService(sensorDataRepository);
             var aggregatedSensorData = new AggregatedSensorData
             {
-                SensorId = "test",
+                SensorBoxId = "test",
                 SensorType = SensorType.Temperature,
                 AggregationType = AggregationType.Mean,
                 CreatedAt = DateTimeOffset.UtcNow,

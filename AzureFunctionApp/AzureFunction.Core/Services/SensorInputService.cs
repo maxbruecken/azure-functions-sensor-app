@@ -21,50 +21,57 @@ namespace AzureFunction.Core.Services
 
         public async Task<IEnumerable<AggregatedSensorData>> ProcessInputAsync(SensorInput input)
         {
-            _logger.LogDebug($"Incoming raw sensor data: sensor id {input.SensorId}");
+            _logger.LogDebug($"Incoming raw sensor data: sensor id {input.SensorBoxId}");
 
-            if (!input.Values.Any())
+            if (!input.Data.SelectMany(x => x.Values).Any())
             {
                 return Enumerable.Empty<AggregatedSensorData>();
             }
 
             var aggregatedSensorData = new List<AggregatedSensorData>();
-            var sensor = await _sensorRepository.GetById(input.SensorId);
-            var timestamp = DateTimeOffset.UtcNow;
-            var mean = input.Values.Average();
-            aggregatedSensorData.Add(new AggregatedSensorData
+            foreach (var sensorData in input.Data)
             {
-                SensorId = sensor.Id,
-                AggregationType = AggregationType.Mean,
-                CreatedAt = timestamp,
-                SensorType = sensor.Type,
-                Value = mean
-            });
-            aggregatedSensorData.Add(new AggregatedSensorData
-            {
-                SensorId = sensor.Id,
-                AggregationType = AggregationType.Min,
-                CreatedAt = timestamp,
-                SensorType = sensor.Type,
-                Value = input.Values.Min()
-            });
-            aggregatedSensorData.Add(new AggregatedSensorData
-            {
-                SensorId = sensor.Id,
-                AggregationType = AggregationType.Max,
-                CreatedAt = timestamp,
-                SensorType = sensor.Type,
-                Value = input.Values.Max()
-            });
-            aggregatedSensorData.Add(new AggregatedSensorData
-            {
-                SensorId = sensor.Id,
-                AggregationType = AggregationType.StandardDeviation,
-                CreatedAt = timestamp,
-                SensorType = sensor.Type,
-                Value = input.Values.Aggregate(0d, (a, x) => a += Math.Pow(x - mean, 2)) / (input.Values.Count() - 1)
-            });
+                var sensor = await _sensorRepository.GetByBoxIdAndType(input.SensorBoxId, sensorData.Type);
+                AddAggregatedData(input, aggregatedSensorData, sensor, sensorData);
+            }
+
             return aggregatedSensorData;
+        }
+
+        private static void AddAggregatedData(SensorInput input, ICollection<AggregatedSensorData> aggregatedSensorData, Sensor sensor, SensorData sensorData)
+        {
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorBoxId = sensor.BoxId,
+                SensorType = sensor.Type,
+                AggregationType = AggregationType.Mean,
+                CreatedAt = input.Timestamp,
+                Value = sensorData.Values.Average()
+            });
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorBoxId = sensor.BoxId,
+                SensorType = sensor.Type,
+                AggregationType = AggregationType.Min,
+                CreatedAt = input.Timestamp,
+                Value = sensorData.Values.Min()
+            });
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorBoxId = sensor.BoxId,
+                SensorType = sensor.Type,
+                AggregationType = AggregationType.Max,
+                CreatedAt = input.Timestamp,
+                Value = sensorData.Values.Max()
+            });
+            aggregatedSensorData.Add(new AggregatedSensorData
+            {
+                SensorBoxId = sensor.BoxId,
+                SensorType = sensor.Type,
+                AggregationType = AggregationType.StandardDeviation,
+                CreatedAt = input.Timestamp,
+                Value = sensorData.Values.Aggregate(0d, (a, x) => a + Math.Pow(x - sensorData.Values.Average(), 2)) / (sensorData.Values.Count() - 1)
+            });
         }
     }
 }

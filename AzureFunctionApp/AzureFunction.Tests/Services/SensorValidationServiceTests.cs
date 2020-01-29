@@ -4,39 +4,38 @@ using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
 using AzureFunction.Core.Services;
 using FakeItEasy;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AzureFunction.Tests.Services
 {
-    [TestClass()]
+    [TestClass]
     public class SensorValidationServiceTests
     {
-        [TestMethod()]
+        [TestMethod]
         public async Task ValidateAggregatedDataAsyncTest()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetById("test")).Returns(new Sensor { Id = "test", Type = SensorType.Temperature, Min = 5, Max = 10, LastSeen = DateTimeOffset.UtcNow.AddMinutes(-10) });
-            ISensorAlarmRepository sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
-            A.CallTo(() => sensorAlarmRepository.GetBySensorIdAndStatus("test", AlarmStatus.InvalidData)).Returns((SensorAlarm)null);
+            A.CallTo(() => sensorRepository.GetByBoxIdAndType("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature) { Min = 5, Max = 10, LastSeen = DateTimeOffset.UtcNow.AddMinutes(-10) });
+            var sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
+            A.CallTo(() => sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus("test", SensorType.Temperature, AlarmStatus.InvalidData)).Returns((SensorAlarm)null);
 
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 
-            await service.ValidateSensorDataAsync(new AggregatedSensorData { SensorId = "test", AggregationType = AggregationType.Max, SensorType = SensorType.Temperature, Value = 4 });
+            await service.ValidateSensorDataAsync(new AggregatedSensorData { SensorBoxId = "test", AggregationType = AggregationType.Max, SensorType = SensorType.Temperature, Value = 4 });
             A.CallTo(() => sensorAlarmRepository.Insert(A<SensorAlarm>.That.Matches(a => a.Status == AlarmStatus.InvalidData))).MustHaveHappened();
 
-            await service.ValidateSensorDataAsync(new AggregatedSensorData { SensorId = "test", AggregationType = AggregationType.Max, SensorType = SensorType.Temperature, Value = 11 });
+            await service.ValidateSensorDataAsync(new AggregatedSensorData { SensorBoxId = "test", AggregationType = AggregationType.Max, SensorType = SensorType.Temperature, Value = 11 });
             A.CallTo(() => sensorAlarmRepository.Insert(A<SensorAlarm>.That.Matches(a => a.Status == AlarmStatus.InvalidData))).MustHaveHappened();
         }
 
-        [TestMethod()]
+        [TestMethod]
         public async Task CheckSensorsAndAlarmsTest()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor { Id = "test", Type = SensorType.Temperature, LastSeen = DateTimeOffset.UtcNow.AddMinutes(-10) } });
-            ISensorAlarmRepository sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
-            A.CallTo(() => sensorAlarmRepository.GetBySensorIdAndStatus("test", AlarmStatus.Dead)).Returns((SensorAlarm)null);
+            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor("test", SensorType.Temperature) { Min = 5, Max = 10, LastSeen = DateTimeOffset.UtcNow.AddMinutes(-10) } });
+            var sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
+            A.CallTo(() => sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus("test", SensorType.Temperature, AlarmStatus.Dead)).Returns((SensorAlarm)null);
 
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 
@@ -44,14 +43,14 @@ namespace AzureFunction.Tests.Services
             A.CallTo(() => sensorAlarmRepository.Insert(A<SensorAlarm>.That.Matches(a => a.Status == AlarmStatus.Dead))).MustHaveHappened();
         }
 
-        [TestMethod()]
+        [TestMethod]
         public async Task CheckObsoleteAlarmsTest()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor { Id = "test", Type = SensorType.Temperature, LastSeen = DateTimeOffset.UtcNow } });
-            ISensorAlarmRepository sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
-            SensorAlarm alarm = new SensorAlarm { SensorId = "test", Status = AlarmStatus.Dead };
-            A.CallTo(() => sensorAlarmRepository.GetBySensorIdAndStatus("test", AlarmStatus.Dead)).Returns(alarm);
+            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor("test", SensorType.Temperature) { Min = 5, Max = 10, LastSeen = DateTimeOffset.UtcNow } });
+            var sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
+            var alarm = new SensorAlarm { SensorBoxId = "test", SensorType = SensorType.Temperature, Status = AlarmStatus.Dead };
+            A.CallTo(() => sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus("test", SensorType.Temperature, AlarmStatus.Dead)).Returns(alarm);
 
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 
@@ -63,10 +62,9 @@ namespace AzureFunction.Tests.Services
         public async Task CheckObsoleteAlarmsResultsNullTest()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor { Id = "test", Type = SensorType.Temperature, LastSeen = DateTimeOffset.UtcNow } });
-            ISensorAlarmRepository sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
-            SensorAlarm alarm = new SensorAlarm { SensorId = "test", Status = AlarmStatus.Dead };
-            A.CallTo(() => sensorAlarmRepository.GetBySensorIdAndStatus("test", AlarmStatus.Dead)).Returns((SensorAlarm)null);
+            A.CallTo(() => sensorRepository.GetAll()).Returns(new[] { new Sensor("test", SensorType.Temperature) { Min = 5, Max = 10, LastSeen = DateTimeOffset.UtcNow } });
+            var sensorAlarmRepository = A.Fake<ISensorAlarmRepository>();
+            A.CallTo(() => sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus("test", SensorType.Temperature, AlarmStatus.Dead)).Returns((SensorAlarm)null);
 
             var service = new SensorValidationService(sensorRepository, sensorAlarmRepository, A.Fake<ILogger<SensorValidationService>>());
 

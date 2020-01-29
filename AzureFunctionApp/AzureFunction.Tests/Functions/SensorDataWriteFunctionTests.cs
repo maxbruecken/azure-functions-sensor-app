@@ -20,7 +20,7 @@ namespace AzureFunction.Tests.Functions
 
             var aggregatedSensorData = new AggregatedSensorData
             {
-                SensorId = "test",
+                SensorBoxId = "test",
                 SensorType = SensorType.Temperature,
                 AggregationType = AggregationType.Mean,
                 CreatedAt = DateTimeOffset.UtcNow,

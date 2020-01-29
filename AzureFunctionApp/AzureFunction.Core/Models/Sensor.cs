@@ -7,23 +7,26 @@ namespace AzureFunction.Core.Models
     {
         public Sensor()
         {
-            RowKey = string.Empty;
+        }
+        
+        public Sensor(string boxId, SensorType type)
+        {
+            BoxId = boxId;
+            Type = type;
         }
 
         [IgnoreProperty]
-        public string Id
+        public string BoxId
         {
             get => PartitionKey;
             set => PartitionKey = value;
         }
 
         [IgnoreProperty]
-        public SensorType Type { get; set; }
-
-        public string SensorTypeString
+        public SensorType Type
         {
-            get => $"{Type:G}";
-            set => Type = (SensorType) Enum.Parse(typeof(SensorType), value, true);
+            get => (SensorType) Enum.Parse(typeof(SensorType), RowKey, true);
+            set => RowKey = $"{value:G}";
         }
 
         public double Min { get; set; }

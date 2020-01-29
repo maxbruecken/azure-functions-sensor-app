@@ -17,15 +17,19 @@ namespace AzureFunction.Core.Repositories
             _client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
         }
 
-        public async Task<SensorAlarm> GetBySensorIdAndStatus(string sensorId, AlarmStatus status)
+        public async Task<SensorAlarm> GetBySensorBoxIdAndSensorTypeAndStatus(string sensorBoxId, SensorType sensorType, AlarmStatus status)
         {
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
             var tableQuery = new TableQuery<SensorAlarm>().Where(
                 TableQuery.CombineFilters(
-                    TableQuery.GenerateFilterCondition(nameof(SensorAlarm.PartitionKey), QueryComparisons.Equal, sensorId),
-                TableOperators.And,
-                    TableQuery.GenerateFilterCondition(nameof(SensorAlarm.StatusString), QueryComparisons.Equal, $"{status:G}")
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition(nameof(SensorAlarm.PartitionKey), QueryComparisons.Equal, sensorBoxId),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition(nameof(SensorAlarm.StatusString), QueryComparisons.Equal, $"{status:G}")
+                    ),
+                    TableOperators.And,
+                    TableQuery.GenerateFilterCondition(nameof(SensorAlarm.SensorTypeString), QueryComparisons.Equal, $"{sensorType:G}")
                 ));
             return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
         }

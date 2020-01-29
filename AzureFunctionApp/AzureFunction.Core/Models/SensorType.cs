@@ -2,6 +2,6 @@
 {
     public enum SensorType
     {
-        Temperature, Voltage
+        Temperature, Humidity, Pressure, Quality
     }
 }

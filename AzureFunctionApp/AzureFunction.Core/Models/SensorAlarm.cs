@@ -11,10 +11,19 @@ namespace AzureFunction.Core.Models
         }
 
         [IgnoreProperty]
-        public string SensorId
+        public string SensorBoxId
         {
             get => PartitionKey;
             set => PartitionKey = value;
+        }
+
+        [IgnoreProperty]
+        public SensorType SensorType { get; set; }
+        
+        public string SensorTypeString
+        {
+            get => $"{SensorType:G}";
+            set => SensorType = (SensorType)Enum.Parse(typeof(SensorType), value);
         }
 
         public DateTimeOffset FiredAt { get; set; } = DateTimeOffset.UtcNow;

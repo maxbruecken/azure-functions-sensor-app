@@ -36,7 +36,17 @@ namespace AzureFunction.Core.Repositories
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
             var tableQuery = new TableQuery<Sensor>();
-            return await table.ExecuteQuerySegmentedAsync(tableQuery, null);
+            var sensors = new List<Sensor>();
+            var segment = await table.ExecuteQuerySegmentedAsync(tableQuery, null);
+            var continuationToken = segment.ContinuationToken;
+            do
+            {
+                sensors.AddRange(segment);
+                if (continuationToken == null) break;
+                segment = await table.ExecuteQuerySegmentedAsync(tableQuery, continuationToken);
+                continuationToken = segment.ContinuationToken;
+            } while (true);
+            return sensors;
         }
 
         public async Task Insert(Sensor sensor)

@@ -16,7 +16,7 @@ namespace AzureFunction.Start
     class Program
     {
         private const int SensorBoxCount = 1000;
-        private const int SensorInputCount = 1000;
+        private const int SensorInputCount = 10000;
         
         private static readonly IDictionary<SensorType, (double Min, double Max)> SensorRanges = new Dictionary<SensorType, (double Min, double Max)>
         {

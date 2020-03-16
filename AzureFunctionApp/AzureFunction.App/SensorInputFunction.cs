@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using AzureFunction.App.Authentication;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;

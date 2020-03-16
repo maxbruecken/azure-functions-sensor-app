@@ -3,22 +3,22 @@
   "contentVersion": "1.0.0.0",
   "variables": {
     "functionAppStorageAccount": {
-      "name": "objektforummannheim",
+      "name": "objektstuttgart",
       "skuName": "Standard_LRS",
       "tier": "Standard"
     },
     "functionAppServicePlan": {
-      "name": "objektforum-mannheim",
+      "name": "objektforum-stuttgart",
       "sku": {
         "name": "Y1",
         "tier": "Dynamic"
       }
     },
     "functionAppService": {
-      "name": "objektforum-mannheim"
+      "name": "objektforum-stuttgart"
     },
     "functionAppApplicationInsights": {
-      "name": "objektforum-mannheim"
+      "name": "objektforum-stuttgart"
     }
   },
   "resources": [
@@ -71,6 +71,7 @@
       "location": "[resourceGroup().location]",
       "kind": "functionapp,linux",
       "properties": {
+        "httpsOnly": true,
         "siteConfig": {
           "appSettings": [
             {
@@ -90,12 +91,16 @@
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('functionAppStorageAccount').name,';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('functionAppStorageAccount').name), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
             },
             {
+              "name": "BypassAuthentication",
+              "value": "true"
+            },
+            {
               "name": "JwtTokenMetadataAddress",
-              "value": "[concat('https://login.microsoftonline.com/', subscription().tenantId, '/.well-known/openid-configuration')]"
+              "value": ""
             },
             {
               "name": "JwtTokenValidAudience",
-              "value": "https://objektforummannheim.onmicrosoft.com/ObjektForumMannheimFunctionApp"
+              "value": ""
             }
           ]
         },

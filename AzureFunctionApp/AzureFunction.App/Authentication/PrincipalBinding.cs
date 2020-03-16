@@ -14,13 +14,19 @@ namespace AzureFunction.App.Authentication
     public class PrincipalBinding : IBinding
     {
         private readonly string _validAudience;
+        private readonly bool _bypassAuthentication;
         private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
         private TokenValidationParameters _tokenValidationParameters;
 
-        public PrincipalBinding(string metadataAddress, string validAudience)
+        public PrincipalBinding(string metadataAddress, string validAudience, bool bypassAuthentication)
         {
             _validAudience = validAudience;
-            
+            _bypassAuthentication = bypassAuthentication;
+
+            if (bypassAuthentication)
+            {
+                return;
+            }
             _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(metadataAddress, 
                 new OpenIdConnectConfigurationRetriever(), 
                 new HttpDocumentRetriever {RequireHttps = true});
@@ -31,14 +37,17 @@ namespace AzureFunction.App.Authentication
             await PrepareTokenValidationParametersAsync();
             if (value is HttpRequest httpRequest)
             {
-                var binding = new PrincipalValueProvider(httpRequest, _tokenValidationParameters);
-                return binding;
+                return new PrincipalValueProvider(httpRequest, _tokenValidationParameters, _bypassAuthentication);
             }
             throw new InvalidOperationException("Value must be an HttpRequest");
         }
 
         private async Task PrepareTokenValidationParametersAsync()
         {
+            if (_bypassAuthentication)
+            {
+                return;
+            }
             if (_tokenValidationParameters != null)
             {
                 return;
@@ -58,8 +67,7 @@ namespace AzureFunction.App.Authentication
             await PrepareTokenValidationParametersAsync();
             if (context.BindingData.TryGetValue("$request", out var request) && request is HttpRequest httpRequest)
             {
-                var binding = new PrincipalValueProvider(httpRequest, _tokenValidationParameters);
-                return binding;
+                return new PrincipalValueProvider(httpRequest, _tokenValidationParameters, _bypassAuthentication);
             }
             throw new InvalidOperationException("Expected context binding data to contain an HttpRequest");
         }

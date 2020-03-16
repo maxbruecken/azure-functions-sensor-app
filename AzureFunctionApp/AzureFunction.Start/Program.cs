@@ -16,7 +16,7 @@ namespace AzureFunction.Start
     class Program
     {
         private const int SensorBoxCount = 10;
-        private const int SensorInputCount = 100;
+        private const int SensorInputCount = 1;
         
         private static readonly IDictionary<SensorType, (double Min, double Max)> SensorRanges = new Dictionary<SensorType, (double Min, double Max)>
         {
@@ -30,7 +30,6 @@ namespace AzureFunction.Start
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("local.settings.json", false)
-                //.AddJsonFile("appsettings.json")
                 .Build();
 
             var random = new Random();
@@ -59,24 +58,16 @@ namespace AzureFunction.Start
                 sensorBox.LastSend = utcNow.Subtract(TimeSpan.FromMinutes(1.0 + random.NextDouble()));
             }
             
-            var clientApplication = ConfidentialClientApplicationBuilder
-                .Create(configuration["ClientId"])
-                .WithAuthority(AzureCloudInstance.AzurePublic, configuration["TenantId"])
-                .WithClientSecret(configuration["ClientSecret"])
-                .Build();
-
-            var token = await clientApplication
-                .AcquireTokenForClient(new[] {configuration["ApplicationScope"]})
-                .ExecuteAsync();
+            Console.WriteLine("All sensors are ready. Starting sending of inputs ...");
             
             var httpClient = new HttpClient
             {
-                DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken) },
                 Timeout = TimeSpan.FromMinutes(5)
             };
 
             var uri = new Uri($"{configuration["ApplicationUri"]}api/SensorInput");
             var tasks = new List<Task<HttpResponseMessage>>();
+            var taskChunk = new List<Task<HttpResponseMessage>>();
             var sentCount = 0;
             while (sentCount < SensorInputCount)
             {
@@ -105,13 +96,21 @@ namespace AzureFunction.Start
                 var content = new StringContent(JsonConvert.SerializeObject(sensorInput), Encoding.UTF8, "application/json");
                 var task = httpClient.PostAsync(uri, content);
                 tasks.Add(task);
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                taskChunk.Add(task);
                 sentCount++;
+                
+                if (taskChunk.Count >= 10)
+                {
+                    await Task.WhenAll(taskChunk);
+                    taskChunk.Clear();
+                    Console.WriteLine($"Sent {sentCount} inputs so far ...");
+                }
             }
 
             var responses = await Task.WhenAll(tasks);
             
-            Console.Out.WriteLine($"Sent {tasks.Count()} sensor inputs for {sensorBoxes.Count} sensors boxes. {responses.Count(r => r.IsSuccessStatusCode)} tasks completed successfully, {responses.Count(r => !r.IsSuccessStatusCode)} tasks failed.");
+            Console.WriteLine($"Sent {tasks.Count()} sensor inputs for {sensorBoxes.Count} sensors boxes. {responses.Count(r => r.IsSuccessStatusCode)} tasks completed successfully, {responses.Count(r => !r.IsSuccessStatusCode)} tasks failed.");
+            Console.ReadKey();
         }
 
         private static double CreateSensorValue(SensorType sensorType, Random random)

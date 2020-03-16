@@ -16,7 +16,8 @@ namespace AzureFunction.App.Authentication
         {
             var jwtMedataAddress = _configuration["JwtTokenMetadataAddress"];
             var jwtValidAudience = _configuration["JwtTokenValidAudience"];
-            var provider = new PrincipalBindingProvider(jwtMedataAddress, jwtValidAudience);
+            var bypassAuthentication = bool.Parse(_configuration["BypassAuthentication"] ?? "false");
+            var provider = new PrincipalBindingProvider(jwtMedataAddress, jwtValidAudience, bypassAuthentication);
             context.AddBindingRule<PrincipalAttribute>().Bind(provider);
         }
     }

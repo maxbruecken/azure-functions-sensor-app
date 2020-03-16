@@ -15,8 +15,8 @@ namespace AzureFunction.Start
 {
     class Program
     {
-        private const int SensorBoxCount = 1000;
-        private const int SensorInputCount = 10000;
+        private const int SensorBoxCount = 10;
+        private const int SensorInputCount = 1;
         
         private static readonly IDictionary<SensorType, (double Min, double Max)> SensorRanges = new Dictionary<SensorType, (double Min, double Max)>
         {
@@ -29,8 +29,7 @@ namespace AzureFunction.Start
         static async Task Main()
         {
             var configuration = new ConfigurationBuilder()
-                //.AddJsonFile("local.settings.json", false)
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("local.settings.json", false)
                 .Build();
 
             var random = new Random();
@@ -61,19 +60,8 @@ namespace AzureFunction.Start
             
             Console.WriteLine("All sensors are ready. Starting sending of inputs ...");
             
-            var clientApplication = ConfidentialClientApplicationBuilder
-                .Create(configuration["ClientId"])
-                .WithAuthority(AzureCloudInstance.AzurePublic, configuration["TenantId"])
-                .WithClientSecret(configuration["ClientSecret"])
-                .Build();
-
-            var token = await clientApplication
-                .AcquireTokenForClient(new[] {configuration["ApplicationScope"]})
-                .ExecuteAsync();
-            
             var httpClient = new HttpClient
             {
-                DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken) },
                 Timeout = TimeSpan.FromMinutes(5)
             };
 

@@ -15,15 +15,21 @@ namespace AzureFunction.App.Authentication
         
         private readonly HttpRequest _request;
         private readonly TokenValidationParameters _tokenValidationParameters;
+        private readonly bool _bypassAuthentication;
 
-        public PrincipalValueProvider(HttpRequest request, TokenValidationParameters tokenValidationParameters)
+        public PrincipalValueProvider(HttpRequest request, TokenValidationParameters tokenValidationParameters, bool bypassAuthentication)
         {
             _request = request;
             _tokenValidationParameters = tokenValidationParameters;
+            _bypassAuthentication = bypassAuthentication;
         }
             
         public Task<object> GetValueAsync()
         {
+            if (_bypassAuthentication)
+            {
+                return Task.FromResult((object)new ClaimsPrincipal(new ClaimsIdentity("BypassAuthentication")));
+            }
             if (_request.Headers.ContainsKey(AuthHeaderName) &&
                 _request.Headers[AuthHeaderName].ToString().StartsWith(BearerPrefix))
             {

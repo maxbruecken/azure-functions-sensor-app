@@ -1,6 +1,17 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dockerRegistryUrl": {
+      "type": "string"
+    },
+    "dockerRegistryUser": {
+      "type": "string"
+    },
+    "dockerRegistryPassword": {
+      "type": "string"
+    }
+  },
   "variables": {
     "functionAppStorageAccount": {
       "name": "objektforumstuttgart",
@@ -101,6 +112,22 @@
             {
               "name": "JwtTokenValidAudience",
               "value": ""
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[parameters('dockerRegistryUrl')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "[parameters('dockerRegistryUser')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "[parameters('dockerRegistryPassword')]"
+            },
+            {
+              "Name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "Value": "false"
             }
           ]
         },

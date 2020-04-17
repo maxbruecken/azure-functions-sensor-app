@@ -74,7 +74,7 @@ stages:
             displayName: 'Copy resource template to artifacts'
             inputs:
               SourceFolder: AzureFunctionApp/AzureFunction.Infrastructure/Templates 
-              Contents: resourceGroup.iac.json
+              Contents: '*.json'
               TargetFolder: '$(build.artifactstagingdirectory)'
 
           - publish: $(build.artifactstagingdirectory)

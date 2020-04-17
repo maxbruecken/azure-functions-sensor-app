@@ -29,19 +29,19 @@ stages:
               projects: '**/*.csproj'
 
           - task: DotNetCoreCLI@2
+            displayName: 'dotnet test'
+            inputs:
+              command: 'test'
+              projects: '**/*.csproj'
+              arguments: '--no-restore --configuration Release --framework netcoreapp3.1'
+
+          - task: DotNetCoreCLI@2
             displayName: 'dotnet publish'
             inputs:
               command: 'publish'
               projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
               publishWebProjects: false
-              arguments: '--no-restore --configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'dotnet test'
-            inputs:
-              command: 'test'
-              projects: '**/*.csproj'
-              arguments: '--no-restore --no-build --configuration Release --framework netcoreapp3.1'
+              arguments: '--no-restore --no-build --configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
 
           - task: CopyFiles@2
             displayName: 'Copy resource template to artifacts'

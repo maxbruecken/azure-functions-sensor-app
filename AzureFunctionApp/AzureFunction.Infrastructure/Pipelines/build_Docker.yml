@@ -33,7 +33,7 @@ stages:
             inputs:
               command: 'test'
               projects: '**/*.csproj'
-              arguments: '--configuration Release --framework netcoreapp3.1'
+              arguments: '--no-restore --configuration Release --framework netcoreapp3.1'
 
           - task: DotNetCoreCLI@2
             displayName: 'Create Package'
@@ -41,7 +41,7 @@ stages:
               command: 'publish'
               projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
               publishWebProjects: false
-              arguments: '--configuration Release --output $(Build.BinariesDirectory)/output/ --framework netcoreapp3.1'
+              arguments: '--no-restore --no-build --configuration Release --output $(Build.BinariesDirectory)/output/ --framework netcoreapp3.1'
               zipAfterPublish: false
               
           - task: Docker@2

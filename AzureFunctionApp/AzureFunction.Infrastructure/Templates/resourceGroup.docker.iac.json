@@ -21,8 +21,15 @@
     "functionAppServicePlan": {
       "name": "objektforum-stuttgart",
       "sku": {
-        "name": "Y1",
-        "tier": "Dynamic"
+        "name": "EP1",
+        "tier": "ElasticPremium"
+      },
+      "properties": {
+        "workerSize": "3",
+        "workerSizeId": "3",
+        "numberOfWorkers": "1",
+        "reserved": true,
+        "maximumElasticWorkerCount": 5
       }
     },
     "functionAppService": {
@@ -55,13 +62,8 @@
       "name": "[variables('functionAppServicePlan').name]",
       "location": "[resourceGroup().location]",
       "sku": "[variables('functionAppServicePlan').sku]",
-      "kind": "linux",
-      "properties": {
-        "workerSize": "0",
-        "workerSizeId": "0",
-        "numberOfWorkers": "1",
-        "reserved": true
-      }
+      "properties": "[variables('functionAppServicePlan').properties]",
+      "kind": "linux"
     },
     {
       "comments": "========== RESOURCE FOR APPLICATION-INSIGHTS ==========",

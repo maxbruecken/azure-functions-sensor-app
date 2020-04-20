@@ -1,6 +1,17 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dockerRegistryUrl": {
+      "type": "string"
+    },
+    "dockerRegistryUser": {
+      "type": "string"
+    },
+    "dockerRegistryPassword": {
+      "type": "string"
+    }
+  },
   "variables": {
     "functionAppStorageAccount": {
       "name": "objektforumstuttgart",
@@ -10,8 +21,15 @@
     "functionAppServicePlan": {
       "name": "objektforum-stuttgart",
       "sku": {
-        "name": "Y1",
-        "tier": "Dynamic"
+        "name": "EP1",
+        "tier": "ElasticPremium"
+      },
+      "properties": {
+        "workerSize": "3",
+        "workerSizeId": "3",
+        "numberOfWorkers": "1",
+        "reserved": true,
+        "maximumElasticWorkerCount": 5
       }
     },
     "functionAppService": {
@@ -44,13 +62,8 @@
       "name": "[variables('functionAppServicePlan').name]",
       "location": "[resourceGroup().location]",
       "sku": "[variables('functionAppServicePlan').sku]",
-      "kind": "linux",
-      "properties": {
-        "workerSize": "0",
-        "workerSizeId": "0",
-        "numberOfWorkers": "1",
-        "reserved": true
-      }
+      "properties": "[variables('functionAppServicePlan').properties]",
+      "kind": "linux"
     },
     {
       "comments": "========== RESOURCE FOR APPLICATION-INSIGHTS ==========",
@@ -101,6 +114,22 @@
             {
               "name": "JwtTokenValidAudience",
               "value": ""
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[parameters('dockerRegistryUrl')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "[parameters('dockerRegistryUser')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "[parameters('dockerRegistryPassword')]"
+            },
+            {
+              "Name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "Value": "false"
             }
           ]
         },

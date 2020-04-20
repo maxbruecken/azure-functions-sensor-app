@@ -36,18 +36,45 @@ stages:
               arguments: '--no-restore --configuration Release --framework netcoreapp3.1'
 
           - task: DotNetCoreCLI@2
-            displayName: 'dotnet publish'
+            displayName: 'Create Package'
             inputs:
               command: 'publish'
               projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
               publishWebProjects: false
-              arguments: '--no-restore --no-build --configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
+              arguments: '--no-restore --no-build --configuration Release --output $(Build.BinariesDirectory)/output/ --framework netcoreapp3.1'
+              zipAfterPublish: false
+              
+          - task: Docker@2
+            displayName: 'Build Docker image'
+            inputs:
+              containerRegistry: '$(dockerRegistry)'
+              repository: 'functionapp'
+              command: build
+              Dockerfile: './AzureFunctionApp/AzureFunction.Infrastructure/Pipelines/Dockerfile'
+              buildContext: '$(Build.BinariesDirectory)/output/AzureFunction.App/'
+              tags: |
+                $(Build.BuildNumber)
+              addPipelineData: false
+
+          - task: Docker@2
+            displayName: 'Push Docker image'
+            inputs:
+              containerRegistry: '$(dockerRegistry)'
+              repository: 'functionapp'
+              command: push
+              tags: |
+                $(Build.BuildNumber)
+              addPipelineData: false
+
+          - pwsh: |
+              rm -rf $(Build.BinariesDirectory)/output/AzureFunction.App
+            displayName: 'Clean up'
 
           - task: CopyFiles@2
             displayName: 'Copy resource template to artifacts'
             inputs:
               SourceFolder: AzureFunctionApp/AzureFunction.Infrastructure/Templates 
-              Contents: resourceGroup.iac.json
+              Contents: '*.json'
               TargetFolder: '$(build.artifactstagingdirectory)'
 
           - publish: $(build.artifactstagingdirectory)
@@ -80,16 +107,15 @@ stages:
                     resourceGroupName: $(resourceGroupName)
                     location: $(location)
                     templateLocation: 'Linked artifact'
-                    csmFile: '$(Pipeline.Workspace)/drop/resourceGroup.iac.json'
+                    csmFile: '$(Pipeline.Workspace)/drop/resourceGroup.docker.iac.json'
                     deploymentMode: 'Incremental'
                     deploymentName: 'continuous-deployment'
+                    overrideParameters: '-dockerRegistryUrl "$(dockerRegistryUrl)" -dockerRegistryUser "$(dockerRegistryUser)" -dockerRegistryPassword "$(dockerRegistryPassword)"'
 
-                - task: AzureFunctionApp@1
-                  displayName: Deploy function app
+                - task: AzureFunctionAppContainer@1
+                  displayName: Deploy function app as container
                   inputs:
                     azureSubscription: $(azureResourceManagerConnection)
-                    appType: 'functionAppLinux'
                     appName: $(appName)
-                    package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
+                    imageName: '$(dockerRegistryUrl)/functionapp:$(Build.BuildNumber)'
                     appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
-                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'

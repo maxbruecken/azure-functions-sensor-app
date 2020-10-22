@@ -1,20 +1,7 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+This project shows some aspects of programming model of Azure Functions. Common programming techniques like dependency injection or unit testing are parts of this sample project.
+The sample function app can collect values from sensors (e.g. air temperature, air pressure, humidity etc.) and store this values. The app observes all known sensors and can detect dead sensors.
 
 # Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
-
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
-
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
-
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+After cloning of this repository you can start the sample function app from your IDE (e.g. Visual Studio or JetBrains Rider). The app can run locally without active Azure subscription, please install Azure Storage Emulator to store all data locally.
+You can deploy this sample app to your Azure subscription with provided deploy script (see AzureFunctionApp/AzureFunction.Infrastructure/Templates/deploy.ps1) and start the app in Azure Cloud.

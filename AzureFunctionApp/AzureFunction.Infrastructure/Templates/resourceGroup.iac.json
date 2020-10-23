@@ -3,22 +3,22 @@
   "contentVersion": "1.0.0.0",
   "variables": {
     "functionAppStorageAccount": {
-      "name": "objektforumstuttgart",
+      "name": "sensorapp",
       "skuName": "Standard_LRS",
       "tier": "Standard"
     },
     "functionAppServicePlan": {
-      "name": "objektforum-stuttgart",
+      "name": "sensor-app",
       "sku": {
         "name": "Y1",
         "tier": "Dynamic"
       }
     },
     "functionAppService": {
-      "name": "objektforum-stuttgart"
+      "name": "sensor-app"
     },
     "functionAppApplicationInsights": {
-      "name": "objektforum-stuttgart"
+      "name": "sensor-app"
     }
   },
   "resources": [

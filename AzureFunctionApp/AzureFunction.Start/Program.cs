@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using AzureFunction.Core.Models;
 using AzureFunction.Core.Repositories;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Identity.Client;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace AzureFunction.Start
 {
@@ -32,6 +32,20 @@ namespace AzureFunction.Start
                 .AddJsonFile("local.settings.json", false)
                 .Build();
 
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                },
+                Converters =
+                {
+                    new StringEnumConverter
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy()
+                    }
+                }
+            };
             var random = new Random();
             var sensorRepository = new SensorRepository(configuration["AzureWebJobsStorage"], "sensors");
             var sensors = (await sensorRepository.GetAll()).ToList();

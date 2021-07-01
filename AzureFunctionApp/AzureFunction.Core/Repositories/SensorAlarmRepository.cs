@@ -17,7 +17,7 @@ namespace AzureFunction.Core.Repositories
             _client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
         }
 
-        public async Task<SensorAlarm> GetBySensorBoxIdAndSensorTypeAndStatus(string sensorBoxId, SensorType sensorType, AlarmStatus status)
+        public async Task<SensorAlarm> GetBySensorBoxIdAndSensorTypeAndStatusAsync(string sensorBoxId, SensorType sensorType, AlarmStatus status)
         {
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
@@ -34,7 +34,7 @@ namespace AzureFunction.Core.Repositories
             return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
         }
 
-        public async Task Insert(SensorAlarm alarm)
+        public async Task InsertAsync(SensorAlarm alarm)
         {
             var insertOperation = TableOperation.Insert(alarm);
             var table = _client.GetTableReference(_tableName);
@@ -42,18 +42,19 @@ namespace AzureFunction.Core.Repositories
             await table.ExecuteAsync(insertOperation);
         }
 
-        public async Task Update(SensorAlarm alarm)
+        public async Task UpdateAsync(SensorAlarm alarm)
         {
+            alarm.ETag = "*";
             var mergeOperation = TableOperation.Merge(alarm);
             var table = _client.GetTableReference(_tableName);
-            alarm.ETag = "*";
             await table.CreateIfNotExistsAsync();
             await table.ExecuteAsync(mergeOperation);
         }
 
-        public async Task Delete(SensorAlarm sensorAlarm)
+        public async Task DeleteAsync(SensorAlarm alarm)
         {
-            var deleteOperation = TableOperation.Delete(sensorAlarm);
+            alarm.ETag = "*";
+            var deleteOperation = TableOperation.Delete(alarm);
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
             await table.ExecuteAsync(deleteOperation);

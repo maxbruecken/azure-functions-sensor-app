@@ -18,7 +18,7 @@ namespace AzureFunction.Core.Repositories
             _client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
         }
 
-        public async Task<Sensor> GetByBoxIdAndType(string boxId, SensorType type)
+        public async Task<Sensor> GetByBoxIdAndTypeAsync(string boxId, SensorType type)
         {
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
@@ -31,7 +31,7 @@ namespace AzureFunction.Core.Repositories
             return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
         }
 
-        public async Task<IEnumerable<Sensor>> GetAll()
+        public async Task<IEnumerable<Sensor>> GetAllAsync()
         {
             var table = _client.GetTableReference(_tableName);
             await table.CreateIfNotExistsAsync();
@@ -49,7 +49,7 @@ namespace AzureFunction.Core.Repositories
             return sensors;
         }
 
-        public async Task Insert(Sensor sensor)
+        public async Task InsertAsync(Sensor sensor)
         {
             var insertOperation = TableOperation.Insert(sensor);
             var table = _client.GetTableReference(_tableName);
@@ -57,11 +57,11 @@ namespace AzureFunction.Core.Repositories
             await table.ExecuteAsync(insertOperation);
         }
 
-        public async Task Update(Sensor sensor)
+        public async Task UpdateAsync(Sensor sensor)
         {
+            sensor.ETag = "*";
             var mergeOperation = TableOperation.Merge(sensor);
             var table = _client.GetTableReference(_tableName);
-            sensor.ETag = "*";
             await table.CreateIfNotExistsAsync();
             await table.ExecuteAsync(mergeOperation);
         }

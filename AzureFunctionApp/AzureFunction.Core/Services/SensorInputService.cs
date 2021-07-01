@@ -31,7 +31,7 @@ namespace AzureFunction.Core.Services
             var aggregatedSensorData = new List<AggregatedSensorData>();
             foreach (var sensorData in input.Data)
             {
-                var sensor = await _sensorRepository.GetByBoxIdAndType(input.SensorBoxId, sensorData.Type);
+                var sensor = await _sensorRepository.GetByBoxIdAndTypeAsync(input.SensorBoxId, sensorData.Type);
                 AddAggregatedData(input, aggregatedSensorData, sensor, sensorData);
             }
 

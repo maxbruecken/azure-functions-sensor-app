@@ -42,13 +42,13 @@ namespace AzureFunction.Start
                 {
                     new StringEnumConverter
                     {
-                        NamingStrategy = new CamelCaseNamingStrategy()
+                        NamingStrategy = new DefaultNamingStrategy()
                     }
                 }
             };
             var random = new Random();
             var sensorRepository = new SensorRepository(configuration["AzureWebJobsStorage"], "sensors");
-            var sensors = (await sensorRepository.GetAll()).ToList();
+            var sensors = (await sensorRepository.GetAllAsync()).ToList();
             var sensorBoxes = sensors.GroupBy(x => x.BoxId).Select(g => new SensorBox {Id = g.Key}).ToList();
             while(sensorBoxes.Count < SensorBoxCount)
             {
@@ -60,7 +60,7 @@ namespace AzureFunction.Start
                         Min = min,
                         Max = max
                     };
-                    await sensorRepository.Insert(sensor);
+                    await sensorRepository.InsertAsync(sensor);
                     sensors.Add(sensor);   
                 }
                 sensorBoxes.Add(new SensorBox {Id = boxId});

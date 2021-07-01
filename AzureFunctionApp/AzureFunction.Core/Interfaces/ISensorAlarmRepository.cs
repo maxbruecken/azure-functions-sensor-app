@@ -5,9 +5,9 @@ namespace AzureFunction.Core.Interfaces
 {
     public interface ISensorAlarmRepository
     {
-        Task<SensorAlarm> GetBySensorBoxIdAndSensorTypeAndStatus(string sensorBoxId, SensorType sensorType, AlarmStatus status);
-        Task Insert(SensorAlarm alarm);
-        Task Update(SensorAlarm alarm);
-        Task Delete(SensorAlarm sensorAlarm);
+        Task<SensorAlarm> GetBySensorBoxIdAndSensorTypeAndStatusAsync(string sensorBoxId, SensorType sensorType, AlarmStatus status);
+        Task InsertAsync(SensorAlarm alarm);
+        Task UpdateAsync(SensorAlarm alarm);
+        Task DeleteAsync(SensorAlarm alarm);
     }
 }

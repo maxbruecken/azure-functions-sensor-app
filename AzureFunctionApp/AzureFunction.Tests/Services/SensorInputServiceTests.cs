@@ -33,7 +33,7 @@ namespace AzureFunction.Tests.Services
         public async Task CreatesAllAggregations()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetByBoxIdAndType("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
+            A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
             var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
             var aggregatedSensorData = await service.ProcessInputAsync(SensorInput);
@@ -49,7 +49,7 @@ namespace AzureFunction.Tests.Services
         public async Task CalculatesAggregationsProperly()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetByBoxIdAndType("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
+            A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
             var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
             var aggregatedSensorData = await service.ProcessInputAsync(SensorInput);
@@ -64,7 +64,7 @@ namespace AzureFunction.Tests.Services
         public async Task ReturnsNoAggregationsIfInputIsEmpty()
         {
             var sensorRepository = A.Fake<ISensorRepository>();
-            A.CallTo(() => sensorRepository.GetByBoxIdAndType("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
+            A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
             var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
             var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput

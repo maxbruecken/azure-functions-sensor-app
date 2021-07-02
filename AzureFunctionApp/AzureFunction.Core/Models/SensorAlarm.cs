@@ -8,6 +8,7 @@ namespace AzureFunction.Core.Models
         public SensorAlarm()
         {
             RowKey = Guid.NewGuid().ToString();
+            FiredAt = DateTimeOffset.UtcNow;
         }
 
         [IgnoreProperty]
@@ -26,7 +27,11 @@ namespace AzureFunction.Core.Models
             set => SensorType = (SensorType)Enum.Parse(typeof(SensorType), value);
         }
 
-        public DateTimeOffset FiredAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset FiredAt
+        {
+            get => Timestamp;
+            set => Timestamp = value;
+        }
 
         [IgnoreProperty]
         public AlarmStatus Status { get; set; }

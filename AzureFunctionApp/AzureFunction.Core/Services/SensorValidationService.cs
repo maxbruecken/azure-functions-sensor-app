@@ -88,7 +88,7 @@ namespace AzureFunction.Core.Services
 
         private async Task ValidateAggregatedData(AggregatedSensorData aggregatedSensorData, Sensor sensor)
         {
-            if (AggregationTypesToValidate.Contains(aggregatedSensorData.AggregationType))
+            if (!AggregationTypesToValidate.Contains(aggregatedSensorData.AggregationType))
             {
                 return;
             }

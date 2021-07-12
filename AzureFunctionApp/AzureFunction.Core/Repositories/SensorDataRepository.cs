@@ -1,26 +1,27 @@
 using System.Threading.Tasks;
+using Azure.Data.Tables;
+using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Mappers;
 using AzureFunction.Core.Models;
-using Microsoft.Azure.Cosmos.Table;
 
-namespace AzureFunction.Core.Interfaces
+namespace AzureFunction.Core.Repositories
 {
     public class SensorDataRepository : ISensorDataRepository
     {
         private readonly string _tableName;
-        private readonly CloudTableClient _client;
+        private readonly TableServiceClient _client;
         
         public SensorDataRepository(string connectionString, string tableName)
         {
             _tableName = tableName;
-            _client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
+            _client = new TableServiceClient(connectionString);
         }
 
         public async Task InsertAsync(AggregatedSensorData aggregatedSensorData)
         {
-            var insertOperation = TableOperation.Insert(aggregatedSensorData);
-            var table = _client.GetTableReference(_tableName);
+            var table = _client.GetTableClient(_tableName);
             await table.CreateIfNotExistsAsync();
-            await table.ExecuteAsync(insertOperation);
+            await table.UpsertEntityAsync(SensorDataMapper.Map(aggregatedSensorData));
         }
     }
 }

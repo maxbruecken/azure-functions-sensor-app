@@ -1,63 +1,52 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Azure.Data.Tables;
 using AzureFunction.Core.Interfaces;
+using AzureFunction.Core.Mappers;
 using AzureFunction.Core.Models;
-using Microsoft.Azure.Cosmos.Table;
 
 namespace AzureFunction.Core.Repositories
 {
     public class SensorAlarmRepository : ISensorAlarmRepository
     {
         private readonly string _tableName;
-        private readonly CloudTableClient _client;
+        private readonly TableServiceClient _client;
 
         public SensorAlarmRepository(string connectionString, string tableName)
         {
             _tableName = tableName;
-            _client = CloudStorageAccount.Parse(connectionString).CreateCloudTableClient();
+            _client = new TableServiceClient(connectionString);
         }
 
         public async Task<SensorAlarm> GetBySensorBoxIdAndSensorTypeAndStatusAsync(string sensorBoxId, SensorType sensorType, AlarmStatus status)
         {
-            var table = _client.GetTableReference(_tableName);
+            var table = _client.GetTableClient(_tableName);
             await table.CreateIfNotExistsAsync();
-            var tableQuery = new TableQuery<SensorAlarm>().Where(
-                TableQuery.CombineFilters(
-                    TableQuery.CombineFilters(
-                        TableQuery.GenerateFilterCondition(nameof(SensorAlarm.PartitionKey), QueryComparisons.Equal, sensorBoxId),
-                        TableOperators.And,
-                        TableQuery.GenerateFilterCondition(nameof(SensorAlarm.StatusString), QueryComparisons.Equal, $"{status:G}")
-                    ),
-                    TableOperators.And,
-                    TableQuery.GenerateFilterCondition(nameof(SensorAlarm.SensorTypeString), QueryComparisons.Equal, $"{sensorType:G}")
-                ));
-            return (await table.ExecuteQuerySegmentedAsync(tableQuery, null)).FirstOrDefault();
+            var sensorTypeString = sensorType.ToString("G");
+            var alarmStatusString = status.ToString("G");
+            var entityPages = table.QueryAsync<TableEntity>($"{nameof(TableEntity.PartitionKey)} eq '{sensorBoxId}' and {nameof(SensorAlarm.SensorType)} eq '{sensorTypeString}' and {nameof(SensorAlarm.Status)} eq '{alarmStatusString}'");
+            return (await entityPages.AsPages().FirstOrDefaultAsync())?.Values.Select(SensorAlarmMapper.Map).FirstOrDefault();
         }
 
         public async Task InsertAsync(SensorAlarm alarm)
         {
-            var insertOperation = TableOperation.Insert(alarm);
-            var table = _client.GetTableReference(_tableName);
+            var table = _client.GetTableClient(_tableName);
             await table.CreateIfNotExistsAsync();
-            await table.ExecuteAsync(insertOperation);
+            await table.UpsertEntityAsync(SensorAlarmMapper.Map(alarm));
         }
 
         public async Task UpdateAsync(SensorAlarm alarm)
         {
-            alarm.ETag = "*";
-            var mergeOperation = TableOperation.Merge(alarm);
-            var table = _client.GetTableReference(_tableName);
+            var table = _client.GetTableClient(_tableName);
             await table.CreateIfNotExistsAsync();
-            await table.ExecuteAsync(mergeOperation);
+            await table.UpsertEntityAsync(SensorAlarmMapper.Map(alarm));
         }
 
         public async Task DeleteAsync(SensorAlarm alarm)
         {
-            alarm.ETag = "*";
-            var deleteOperation = TableOperation.Delete(alarm);
-            var table = _client.GetTableReference(_tableName);
+            var table = _client.GetTableClient(_tableName);
             await table.CreateIfNotExistsAsync();
-            await table.ExecuteAsync(deleteOperation);
+            await table.DeleteEntityAsync(alarm.SensorBoxId, alarm.Identifier);
         }
     }
 }

@@ -27,7 +27,8 @@ namespace AzureFunction.App
                 .AddScoped<ISensorDataRepository>(p => new SensorDataRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensordata"))
                 .AddScoped<ISensorInputService, SensorInputService>()
                 .AddScoped<ISensorValidationService, SensorValidationService>()
-                .AddScoped<ISensorDataService, SensorDataService>();
+                .AddScoped<ISensorDataService, SensorDataService>()
+                .AddScoped<ISensorService, SensorService>();
         }
 
         void IWebJobsStartup.Configure(IWebJobsBuilder builder)

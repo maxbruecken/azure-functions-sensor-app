@@ -1,3 +1,4 @@
+using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,18 +30,26 @@ namespace AzureFunction.App
             [Queue("aggregated-sensor-data")] IAsyncCollector<AggregatedSensorData> output,
             CancellationToken cancellationToken)
         {
-            if (!(principal?.Identity?.IsAuthenticated).GetValueOrDefault(false))
+            try
             {
-                return new UnauthorizedResult();
-            }
-            var aggregatedSensorData = await _inputService.ProcessInputAsync(input);
-            foreach (var sensorData in aggregatedSensorData)
-            {
-                await output.AddAsync(sensorData, cancellationToken);
-            }
-            await output.FlushAsync(cancellationToken);
+                if (!(principal?.Identity?.IsAuthenticated).GetValueOrDefault(false))
+                {
+                    return new UnauthorizedResult();
+                }
+                var aggregatedSensorData = await _inputService.ProcessInputAsync(input);
+                foreach (var sensorData in aggregatedSensorData)
+                {
+                    await output.AddAsync(sensorData, cancellationToken);
+                }
+                await output.FlushAsync(cancellationToken);
 
-            return new OkResult();
+                return new OkResult();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while executing function 'Sensorinput'. Stack trace: {StackTrace}", e.StackTrace);
+                throw;
+            }
         }
     }
 }

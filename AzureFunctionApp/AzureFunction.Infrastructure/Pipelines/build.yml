@@ -18,9 +18,9 @@ stages:
             clean: true
 
           - task: UseDotNet@2
-            displayName: 'Use .Net Core sdk 3.x'
+            displayName: 'Use .Net Core sdk 6.x'
             inputs:
-              version: 3.1.x
+              version: 6.0.x
 
           - task: DotNetCoreCLI@2
             displayName: 'dotnet restore'
@@ -91,5 +91,5 @@ stages:
                     appType: 'functionAppLinux'
                     appName: $(appName)
                     package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
-                    appSettings: '-FUNCTIONS_EXTENSION_VERSION ~3'
-                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:3.0-appservice'
+                    appSettings: '-FUNCTIONS_EXTENSION_VERSION ~4'
+                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:4-dotnet6-appservice'

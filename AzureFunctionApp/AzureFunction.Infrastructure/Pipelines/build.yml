@@ -41,7 +41,7 @@ stages:
               command: 'publish'
               projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
               publishWebProjects: false
-              arguments: '--no-restore --no-build --configuration Release --output $(build.artifactstagingdirectory) --framework netcoreapp3.1'
+              arguments: '--no-restore --no-build --configuration Release --output $(build.artifactstagingdirectory) --framework net6.0'
 
           - task: CopyFiles@2
             displayName: 'Copy resource template to artifacts'

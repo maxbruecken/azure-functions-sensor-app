@@ -11,13 +11,13 @@ var functionAppStorageAccount = {
 var functionAppServicePlan = {
   name: 'sensor-app'
   sku: {
-    name: 'Y1',
+    name: 'Y1'
     tier: 'Dynamic'
   }
   properties: {
-  	workerSize: 0,
-    workerSizeId: 0,
-    numberOfWorkers: 1,
+  	workerSize: 0
+    workerSizeId: 0
+    numberOfWorkers: 1
     reserved: true
   }
 }

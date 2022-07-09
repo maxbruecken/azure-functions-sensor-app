@@ -6,9 +6,9 @@ namespace AzureFunction.Core.Interfaces
 {
     public interface ISensorRepository
     {
-        Task<Sensor> GetByBoxIdAndType(string id, SensorType type);
-        Task Insert(Sensor sensor);
-        Task Update(Sensor sensor);
-        Task<IEnumerable<Sensor>> GetAll();
+        Task<Sensor> GetByBoxIdAndTypeAsync(string id, SensorType type);
+        Task InsertAsync(Sensor sensor);
+        Task UpdateAsync(Sensor sensor);
+        Task<IEnumerable<Sensor>> GetAllAsync();
     }
 }

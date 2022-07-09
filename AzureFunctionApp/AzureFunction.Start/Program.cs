@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using AzureFunction.Core.Models;
 using AzureFunction.Core.Repositories;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace AzureFunction.Start
 {
@@ -32,23 +31,16 @@ namespace AzureFunction.Start
                 .AddJsonFile("local.settings.json", false)
                 .Build();
 
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            var defaultJsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
             {
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new CamelCaseNamingStrategy()
-                },
                 Converters =
                 {
-                    new StringEnumConverter
-                    {
-                        NamingStrategy = new CamelCaseNamingStrategy()
-                    }
+                    new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
                 }
             };
             var random = new Random();
             var sensorRepository = new SensorRepository(configuration["AzureWebJobsStorage"], "sensors");
-            var sensors = (await sensorRepository.GetAll()).ToList();
+            var sensors = (await sensorRepository.GetAllAsync()).ToList();
             var sensorBoxes = sensors.GroupBy(x => x.BoxId).Select(g => new SensorBox {Id = g.Key}).ToList();
             while(sensorBoxes.Count < SensorBoxCount)
             {
@@ -60,7 +52,7 @@ namespace AzureFunction.Start
                         Min = min,
                         Max = max
                     };
-                    await sensorRepository.Insert(sensor);
+                    await sensorRepository.InsertAsync(sensor);
                     sensors.Add(sensor);   
                 }
                 sensorBoxes.Add(new SensorBox {Id = boxId});
@@ -107,7 +99,7 @@ namespace AzureFunction.Start
                         .ToList()
                 };
                 sensorBox.LastSend = utcNow;
-                var content = new StringContent(JsonConvert.SerializeObject(sensorInput), Encoding.UTF8, "application/json");
+                var content = new StringContent(JsonSerializer.Serialize(sensorInput, defaultJsonOptions), Encoding.UTF8, "application/json");
                 var task = httpClient.PostAsync(uri, content);
                 tasks.Add(task);
                 taskChunk.Add(task);

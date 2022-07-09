@@ -10,6 +10,13 @@ namespace AzureFunction.Core.Services
 {
     public class SensorValidationService : ISensorValidationService
     {
+        private static readonly List<AggregationType> AggregationTypesToValidate = new List<AggregationType>
+        {
+            AggregationType.Mean,
+            AggregationType.Max,
+            AggregationType.Min
+        };
+        
         private readonly ISensorRepository _sensorRepository;
         private readonly ISensorAlarmRepository _sensorAlarmRepository;
         private readonly ILogger<ISensorValidationService> _logger;
@@ -27,7 +34,7 @@ namespace AzureFunction.Core.Services
         {
             _logger.LogDebug($"Incoming aggregated sensor data: sensor id {aggregatedSensorData.SensorBoxId}");
 
-            var sensor = await _sensorRepository.GetByBoxIdAndType(aggregatedSensorData.SensorBoxId, aggregatedSensorData.SensorType);
+            var sensor = await _sensorRepository.GetByBoxIdAndTypeAsync(aggregatedSensorData.SensorBoxId, aggregatedSensorData.SensorType);
 
             if (sensor == null)
             {
@@ -41,7 +48,7 @@ namespace AzureFunction.Core.Services
         public async Task CheckSensorsAndAlarmsAsync()
         {
             var deadLine = DateTimeOffset.UtcNow.AddMinutes(-5);
-            var sensors = await _sensorRepository.GetAll();
+            var sensors = await _sensorRepository.GetAllAsync();
             await FireAlarmsForDeadSensors(sensors, deadLine);
             await RemoveObsoleteAlarms(sensors, deadLine);
         }
@@ -53,12 +60,12 @@ namespace AzureFunction.Core.Services
                 .ToList()
                 .Select(async s =>
                 {
-                    var sensorAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus(s.BoxId, s.Type, AlarmStatus.Dead);
+                    var sensorAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatusAsync(s.BoxId, s.Type, AlarmStatus.Dead);
                     if (sensorAlarm == null)
                     {
                         return;
                     }
-                    await _sensorAlarmRepository.Delete(sensorAlarm);
+                    await _sensorAlarmRepository.DeleteAsync(sensorAlarm);
                 });
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
@@ -76,12 +83,12 @@ namespace AzureFunction.Core.Services
         {
             var now = DateTimeOffset.UtcNow;
             if (sensor.LastSeen < now) sensor.LastSeen = now;
-            await _sensorRepository.Update(sensor);
+            await _sensorRepository.UpdateAsync(sensor);
         }
 
         private async Task ValidateAggregatedData(AggregatedSensorData aggregatedSensorData, Sensor sensor)
         {
-            if (aggregatedSensorData.AggregationType != AggregationType.Min && aggregatedSensorData.AggregationType != AggregationType.Max)
+            if (!AggregationTypesToValidate.Contains(aggregatedSensorData.AggregationType))
             {
                 return;
             }
@@ -95,7 +102,7 @@ namespace AzureFunction.Core.Services
         {
             if (singleton)
             {
-                var existingAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatus(sensor.BoxId, sensor.Type, alarmStatus);
+                var existingAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatusAsync(sensor.BoxId, sensor.Type, alarmStatus);
                 if (existingAlarm != null) return;
             }
             var sensorAlarm = new SensorAlarm
@@ -104,7 +111,7 @@ namespace AzureFunction.Core.Services
                 SensorType = sensor.Type,
                 Status = alarmStatus
             };
-            await _sensorAlarmRepository.Insert(sensorAlarm);
+            await _sensorAlarmRepository.InsertAsync(sensorAlarm);
         }
 
     }

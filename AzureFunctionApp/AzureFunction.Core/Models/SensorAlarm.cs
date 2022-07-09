@@ -1,41 +1,24 @@
 ﻿using System;
-using Microsoft.Azure.Cosmos.Table;
 
 namespace AzureFunction.Core.Models
 {
-    public class SensorAlarm : TableEntity
+    public class SensorAlarm
     {
         public SensorAlarm()
         {
-            RowKey = Guid.NewGuid().ToString();
+            FiredAt = DateTimeOffset.UtcNow;
+            Identifier = Guid.NewGuid().ToString();
         }
 
-        [IgnoreProperty]
-        public string SensorBoxId
-        {
-            get => PartitionKey;
-            set => PartitionKey = value;
-        }
-
-        [IgnoreProperty]
-        public SensorType SensorType { get; set; }
+        public string SensorBoxId { get; set; }
         
-        public string SensorTypeString
-        {
-            get => $"{SensorType:G}";
-            set => SensorType = (SensorType)Enum.Parse(typeof(SensorType), value);
-        }
+        public string Identifier { get; set; }
 
-        public DateTimeOffset FiredAt { get; set; } = DateTimeOffset.UtcNow;
+        public SensorType SensorType { get; set; }
 
-        [IgnoreProperty]
+        public DateTimeOffset FiredAt { get; set; }
+
         public AlarmStatus Status { get; set; }
-
-        public string StatusString
-        {
-            get => $"{Status:G}";
-            set => Status = (AlarmStatus)Enum.Parse(typeof(AlarmStatus), value);
-        }
     }
 
     public enum AlarmStatus

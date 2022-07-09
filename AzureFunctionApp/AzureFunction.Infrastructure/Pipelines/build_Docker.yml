@@ -73,15 +73,15 @@ stages:
             displayName: 'Clean up'
 
           - template: azure-resource-group-deployment.yml
-              parameters:
-                displayName: Check resource template
-                azureSubscription: '$(azureResourceManagerConnection)'
-                deploymentName: 'check'
-                resourceGroupName: '$(resourceGroupName)'
-                location: '$(location)'
-                templateFile: 'resourceGroup.container.iac.bicep'
-                whatIf: true
-                additionalParameters: 'containerRegistryUrl=$(containerRegistryUrl) containerRegistryUser=$(containerRegistryUser) containerRegistryPassword=$(containerRegistryPassword)'
+            parameters:
+              displayName: Check resource template
+              azureSubscription: '$(azureResourceManagerConnection)'
+              deploymentName: 'check'
+              resourceGroupName: '$(resourceGroupName)'
+              location: '$(location)'
+              templateFile: 'resourceGroup.container.iac.bicep'
+              whatIf: true
+              additionalParameters: 'containerRegistryUrl=$(containerRegistryUrl) containerRegistryUser=$(containerRegistryUser) containerRegistryPassword=$(containerRegistryPassword)'
 
           - task: CopyFiles@2
             displayName: 'Copy resource template to artifacts'
@@ -111,14 +111,14 @@ stages:
                   artifact: drop
 
                 - template: azure-resource-group-deployment.yml
-                    parameters:
-                      displayName: Check resource template
-                      azureSubscription: '$(azureResourceManagerConnection)'
-                      deploymentName: 'check'
-                      resourceGroupName: '$(resourceGroupName)'
-                      location: '$(location)'
-                      templateFile: 'resourceGroup.container.iac.bicep'
-                      additionalParameters: 'containerRegistryUrl=$(containerRegistryUrl) containerRegistryUser=$(containerRegistryUser) containerRegistryPassword=$(containerRegistryPassword)'
+                  parameters:
+                    displayName: Deploy resource group infrastructure
+                    azureSubscription: '$(azureResourceManagerConnection)'
+                    deploymentName: 'check'
+                    resourceGroupName: '$(resourceGroupName)'
+                    location: '$(location)'
+                    templateFile: 'resourceGroup.container.iac.bicep'
+                    additionalParameters: 'containerRegistryUrl=$(containerRegistryUrl) containerRegistryUser=$(containerRegistryUser) containerRegistryPassword=$(containerRegistryPassword)'
 
                 - task: AzureFunctionAppContainer@1
                   displayName: Deploy function app as container

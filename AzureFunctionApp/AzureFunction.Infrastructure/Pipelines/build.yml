@@ -57,7 +57,7 @@ stages:
             displayName: 'Copy resource template to artifacts'
             inputs:
               SourceFolder: AzureFunctionApp/AzureFunction.Infrastructure/Templates 
-              Contents: resourceGroup.iac.json
+              Contents: 'resourceGroup.iac.bicep'
               TargetFolder: '$(build.artifactstagingdirectory)'
 
           - publish: $(build.artifactstagingdirectory)
@@ -97,4 +97,4 @@ stages:
                     appName: $(appName)
                     package: '$(Pipeline.Workspace)/drop/AzureFunction.App.zip'
                     appSettings: '-FUNCTIONS_EXTENSION_VERSION ~4'
-                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:4-dotnet6-appservice'
+                    runtimeStack: 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:4-appservice'

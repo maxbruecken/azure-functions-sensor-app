@@ -1,8 +1,6 @@
 using System;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using AzureFunction.App.Authentication;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -26,16 +24,11 @@ namespace AzureFunction.App
         [FunctionName("SensorInput")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] SensorInput input,
-            [Principal] ClaimsPrincipal principal,
             [Queue("aggregated-sensor-data")] IAsyncCollector<AggregatedSensorData> output,
             CancellationToken cancellationToken)
         {
             try
             {
-                if (!(principal?.Identity?.IsAuthenticated).GetValueOrDefault(false))
-                {
-                    return new UnauthorizedResult();
-                }
                 var aggregatedSensorData = await _inputService.ProcessInputAsync(input);
                 foreach (var sensorData in aggregatedSensorData)
                 {

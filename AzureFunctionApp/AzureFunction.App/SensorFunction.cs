@@ -9,8 +9,6 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Security.Claims;
-using AzureFunction.App.Authentication;
 
 namespace AzureFunction.App
 {
@@ -28,13 +26,8 @@ namespace AzureFunction.App
         [FunctionName("GetSensor")]
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")]
             HttpRequest request,
-            [Principal] ClaimsPrincipal principal,
             CancellationToken cancellationToken)
         {
-            if (!(principal?.Identity?.IsAuthenticated).GetValueOrDefault(false))
-            {
-                return new UnauthorizedResult();
-            }
             try
             {
                 var sensorBoxId = request.GetQueryParameterDictionary()["sensorBoxId"];

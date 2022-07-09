@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureFunction.App;
@@ -18,13 +17,13 @@ namespace AzureFunction.Tests.Functions
     [TestClass]
     public class SensorInputFunctionTests
     {
-        private static readonly SensorInput SensorInput = new SensorInput
+        private static readonly SensorInput SensorInput = new()
         {
             SensorBoxId = "test",
             Timestamp = DateTimeOffset.UtcNow,
             Data = new List<SensorData>
             {
-                new SensorData
+                new()
                 {
                     Type = SensorType.Temperature,
                     Values = new List<double> { 1, 2, 3 }
@@ -35,7 +34,7 @@ namespace AzureFunction.Tests.Functions
         [TestMethod]
         public async Task AllowsOnlyAuthenticatedPrincipal()
         {
-            var aggregatedSensorData = new List<AggregatedSensorData> {new AggregatedSensorData(), new AggregatedSensorData()};
+            var aggregatedSensorData = new List<AggregatedSensorData> {new(), new()};
 
             var sensorInputService = A.Fake<ISensorInputService>();
             A.CallTo(() => sensorInputService.ProcessInputAsync(SensorInput)).Returns(aggregatedSensorData);
@@ -45,7 +44,6 @@ namespace AzureFunction.Tests.Functions
             var outputCollector = A.Fake<IAsyncCollector<AggregatedSensorData>>();
             
             var result = await function.Run(SensorInput,
-                new ClaimsPrincipal(new ClaimsIdentity()), 
                 outputCollector, 
                 CancellationToken.None);
 
@@ -55,7 +53,7 @@ namespace AzureFunction.Tests.Functions
         [TestMethod]
         public async Task CreatesOutputForEachAggregation()
         {
-            var aggregatedSensorData = new List<AggregatedSensorData> {new AggregatedSensorData(), new AggregatedSensorData()};
+            var aggregatedSensorData = new List<AggregatedSensorData> {new(), new()};
 
             var sensorInputService = A.Fake<ISensorInputService>();
             A.CallTo(() => sensorInputService.ProcessInputAsync(SensorInput)).Returns(aggregatedSensorData);
@@ -65,7 +63,6 @@ namespace AzureFunction.Tests.Functions
             var outputCollector = A.Fake<IAsyncCollector<AggregatedSensorData>>();
             
             var result = await function.Run(SensorInput,
-                new ClaimsPrincipal(new ClaimsIdentity("Test")), 
                 outputCollector, 
                 CancellationToken.None);
 

@@ -1,5 +1,4 @@
 ﻿using AzureFunction.App;
-using AzureFunction.App.Authentication;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Repositories;
 using AzureFunction.Core.Services;
@@ -34,7 +33,6 @@ namespace AzureFunction.App
         void IWebJobsStartup2.Configure(WebJobsBuilderContext context, IWebJobsBuilder builder)
         {
             Configure(builder);
-            builder.AddExtension<PrincipalExtensionProvider>();
         }
     }
 }

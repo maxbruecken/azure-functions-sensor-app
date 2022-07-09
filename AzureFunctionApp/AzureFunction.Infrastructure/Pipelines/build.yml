@@ -42,6 +42,16 @@ stages:
               projects: 'AzureFunctionApp/AzureFunction.App/AzureFunction.App.csproj'
               publishWebProjects: false
               arguments: '--no-restore --no-build --configuration Release --output $(build.artifactstagingdirectory) --framework net6.0'
+              
+          - template: azure-resource-group-deployment.yml
+              parameters:
+                displayName: Check resource template
+                azureSubscription: '$(azureResourceManagerConnection)'
+                deploymentName: 'check'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(location)'
+                templateFile: 'resourceGroup.iac.bicep'
+                whatIf: true
 
           - task: CopyFiles@2
             displayName: 'Copy resource template to artifacts'
@@ -69,20 +79,15 @@ stages:
               steps:
                 - download: current
                   artifact: drop
-
-                - task: AzureResourceManagerTemplateDeployment@3
-                  displayName: Deploy resource group infrastructure
-                  inputs:
-                    deploymentScope: 'Resource Group'
-                    azureResourceManagerConnection: $(azureResourceManagerConnection)
-                    subscriptionId: $(subscriptionId)
-                    action: 'Create Or Update Resource Group'
-                    resourceGroupName: $(resourceGroupName)
-                    location: $(location)
-                    templateLocation: 'Linked artifact'
-                    csmFile: '$(Pipeline.Workspace)/drop/resourceGroup.iac.json'
-                    deploymentMode: 'Incremental'
-                    deploymentName: 'continuous-deployment'
+                  
+                - template: azure-resource-group-deployment.yml
+                    parameters:
+                      displayName: Deploy resource group infrastructure
+                      azureSubscription: '$(azureResourceManagerConnection)'
+                      deploymentName: 'continuous-deployment'
+                      resourceGroupName: '$(resourceGroupName)'
+                      location: '$(location)'
+                      templateFile: '$(Pipeline.Workspace)/drop/resourceGroup.iac.bicep'
 
                 - task: AzureFunctionApp@1
                   displayName: Deploy function app

@@ -50,7 +50,7 @@ stages:
               deploymentName: 'check'
               resourceGroupName: '$(resourceGroupName)'
               location: '$(location)'
-              templateFile: 'resourceGroup.iac.bicep'
+              templateFile: 'AzureFunctionApp/AzureFunction.Infrastructure/Templates/resourceGroup.iac.bicep'
               whatIf: true
 
           - task: CopyFiles@2

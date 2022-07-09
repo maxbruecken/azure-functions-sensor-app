@@ -32,25 +32,6 @@ namespace AzureFunction.Tests.Functions
         };
         
         [TestMethod]
-        public async Task AllowsOnlyAuthenticatedPrincipal()
-        {
-            var aggregatedSensorData = new List<AggregatedSensorData> {new(), new()};
-
-            var sensorInputService = A.Fake<ISensorInputService>();
-            A.CallTo(() => sensorInputService.ProcessInputAsync(SensorInput)).Returns(aggregatedSensorData);
-
-            var function = new SensorInputFunction(sensorInputService, A.Fake<ILogger<SensorInputFunction>>());
-
-            var outputCollector = A.Fake<IAsyncCollector<AggregatedSensorData>>();
-            
-            var result = await function.Run(SensorInput,
-                outputCollector, 
-                CancellationToken.None);
-
-            result.Should().BeOfType<UnauthorizedResult>();
-        }
-        
-        [TestMethod]
         public async Task CreatesOutputForEachAggregation()
         {
             var aggregatedSensorData = new List<AggregatedSensorData> {new(), new()};

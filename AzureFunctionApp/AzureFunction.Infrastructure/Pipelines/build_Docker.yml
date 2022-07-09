@@ -79,7 +79,7 @@ stages:
               deploymentName: 'check'
               resourceGroupName: '$(resourceGroupName)'
               location: '$(location)'
-              templateFile: 'resourceGroup.container.iac.bicep'
+              templateFile: 'AzureFunctionApp/AzureFunction.Infrastructure/Templates/resourceGroup.container.iac.bicep'
               whatIf: true
               additionalParameters: 'containerRegistryUrl=$(containerRegistryUrl) containerRegistryUser=$(containerRegistryUser) containerRegistryPassword=$(containerRegistryPassword)'
 

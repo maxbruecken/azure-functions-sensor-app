@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureFunction.App;
@@ -10,14 +11,13 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
-namespace AzureFunction.Tests.Functions;
+namespace AzureFunction.Tests.UnitTests.Functions;
 
-[TestClass]
 public class SensorInputFunctionTests
 {
-    private static readonly SensorInput SensorInput = new()
+    private static readonly SensorInput Input = new()
     {
         SensorBoxId = "test",
         Timestamp = DateTimeOffset.UtcNow,
@@ -31,19 +31,20 @@ public class SensorInputFunctionTests
         }
     };
         
-    [TestMethod]
+    [Fact]
     public async Task CreatesOutputForEachAggregation()
     {
-        var aggregatedSensorData = new List<AggregatedSensorData> {new(), new()};
+        var sensor = new Sensor("test", SensorType.Temperature);
+        var aggregatedSensorData = new List<AggregatedSensorData> {new(sensor, AggregationType.Min), new(sensor, AggregationType.Max)};
 
         var sensorInputService = A.Fake<ISensorInputService>();
-        A.CallTo(() => sensorInputService.ProcessInputAsync(SensorInput)).Returns(aggregatedSensorData);
+        A.CallTo(() => sensorInputService.ProcessInputAsync(Input)).Returns(aggregatedSensorData.ToAsyncEnumerable());
 
         var function = new SensorInputFunction(sensorInputService, A.Fake<ILogger<SensorInputFunction>>());
 
         var outputCollector = A.Fake<IAsyncCollector<AggregatedSensorData>>();
             
-        var result = await function.Run(SensorInput,
+        var result = await function.Run(Input,
             outputCollector, 
             CancellationToken.None);
 

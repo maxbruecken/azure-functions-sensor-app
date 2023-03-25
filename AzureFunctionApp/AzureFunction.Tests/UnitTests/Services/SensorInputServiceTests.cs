@@ -8,14 +8,13 @@ using AzureFunction.Core.Services;
 using FakeItEasy;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
-namespace AzureFunction.Tests.Services;
+namespace AzureFunction.Tests.UnitTests.Services;
 
-[TestClass]
 public class SensorInputServiceTests
 {
-    private static readonly SensorInput SensorInput = new()
+    private static readonly SensorInput Input = new()
     {
         SensorBoxId = "test",
         Timestamp = DateTimeOffset.UtcNow,
@@ -29,14 +28,14 @@ public class SensorInputServiceTests
         }
     };
         
-    [TestMethod]
+    [Fact]
     public async Task CreatesAllAggregations()
     {
         var sensorRepository = A.Fake<ISensorRepository>();
-        A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
+        A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature, A<bool>._)).Returns(new Sensor("test", SensorType.Temperature));
         var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
-        var aggregatedSensorData = await service.ProcessInputAsync(SensorInput);
+        var aggregatedSensorData = await service.ProcessInputAsync(Input).ToListAsync();
 
         aggregatedSensorData.Should().HaveCount(4);
         aggregatedSensorData.Should().Contain(x => x.AggregationType == AggregationType.Mean);
@@ -45,14 +44,14 @@ public class SensorInputServiceTests
         aggregatedSensorData.Should().Contain(x => x.AggregationType == AggregationType.StandardDeviation);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CalculatesAggregationsProperly()
     {
         var sensorRepository = A.Fake<ISensorRepository>();
-        A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
+        A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature, A<bool>._)).Returns(new Sensor("test", SensorType.Temperature));
         var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
-        var aggregatedSensorData = await service.ProcessInputAsync(SensorInput);
+        var aggregatedSensorData = await service.ProcessInputAsync(Input).ToListAsync();
 
         aggregatedSensorData.First(a => a.AggregationType == AggregationType.Mean).Value.Should().Be(2d);
         aggregatedSensorData.First(a => a.AggregationType == AggregationType.Min).Value.Should().Be(1d);
@@ -60,11 +59,11 @@ public class SensorInputServiceTests
         aggregatedSensorData.First(a => a.AggregationType == AggregationType.StandardDeviation).Value.Should().Be(1d);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ReturnsNoAggregationsIfInputIsEmpty()
     {
         var sensorRepository = A.Fake<ISensorRepository>();
-        A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature)).Returns(new Sensor("test", SensorType.Temperature));
+        A.CallTo(() => sensorRepository.GetByBoxIdAndTypeAsync("test", SensorType.Temperature, A<bool>._)).Returns(new Sensor("test", SensorType.Temperature));
         var service = new SensorInputService(sensorRepository, A.Fake<ILogger<SensorInputService>>());
 
         var aggregatedSensorData = await service.ProcessInputAsync(new SensorInput
@@ -72,7 +71,7 @@ public class SensorInputServiceTests
             SensorBoxId = "test",
             Timestamp = DateTimeOffset.UtcNow,
             Data = new List<SensorData>()
-        });
+        }).ToListAsync();
 
         aggregatedSensorData.Should().BeEmpty();
     }

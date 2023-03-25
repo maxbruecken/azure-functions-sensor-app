@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureFunction.Core.Interfaces;
@@ -29,18 +30,14 @@ public class SensorInputFunction
     {
         try
         {
-            var aggregatedSensorData = await _inputService.ProcessInputAsync(input);
-            foreach (var sensorData in aggregatedSensorData)
-            {
-                await output.AddAsync(sensorData, cancellationToken);
-            }
+            await _inputService.ProcessInputAsync(input).ForEachAwaitAsync(data => output.AddAsync(data, cancellationToken), cancellationToken: cancellationToken);
             await output.FlushAsync(cancellationToken);
 
             return new OkResult();
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error while executing function 'Sensorinput'. Stack trace: {StackTrace}", e.StackTrace);
+            _logger.LogError(e, "Error while executing function 'SensorInput'");
             throw;
         }
     }

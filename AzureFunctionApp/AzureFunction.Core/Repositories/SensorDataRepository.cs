@@ -1,26 +1,30 @@
+using System;
 using System.Threading.Tasks;
-using Azure.Data.Tables;
+using AzureFunction.Core.DbContext;
+using AzureFunction.Core.Entities;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Mappers;
 using AzureFunction.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AzureFunction.Core.Repositories;
 
 public class SensorDataRepository : ISensorDataRepository
 {
-    private readonly string _tableName;
-    private readonly TableServiceClient _client;
+    private readonly SensorAppContext _context;
         
-    public SensorDataRepository(string connectionString, string tableName)
+    public SensorDataRepository(SensorAppContext context)
     {
-        _tableName = tableName;
-        _client = new TableServiceClient(connectionString);
+        _context = context;
     }
 
     public async Task InsertAsync(AggregatedSensorData aggregatedSensorData)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        await table.UpsertEntityAsync(SensorDataMapper.Map(aggregatedSensorData));
+        var entity = SensorDataMapper.Map(aggregatedSensorData);
+        var sensorEntity = await _context.Set<SensorEntity>().SingleOrDefaultAsync(x => x.BoxId == aggregatedSensorData.Sensor.BoxId && x.Type == aggregatedSensorData.Sensor.Type)
+            ?? throw new InvalidOperationException("Sensor not found");
+        entity.Sensor = sensorEntity;
+        await _context.Set<SensorDataEntity>().AddAsync(entity);
+        await _context.SaveChangesAsync();
     }
 }

@@ -4,23 +4,20 @@ using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
 using AzureFunction.Core.Services;
 using FakeItEasy;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
-namespace AzureFunction.Tests.Services;
+namespace AzureFunction.Tests.UnitTests.Services;
 
-[TestClass]
 public class SensorDataServiceTests
 {
-    [TestMethod]
+    [Fact]
     public async Task InsertAsyncTest()
     {
         var sensorDataRepository = A.Fake<ISensorDataRepository>();
         var service = new SensorDataService(sensorDataRepository);
-        var aggregatedSensorData = new AggregatedSensorData
+        var sensor = new Sensor("test", SensorType.Temperature);
+        var aggregatedSensorData = new AggregatedSensorData(sensor, AggregationType.Mean)
         {
-            SensorBoxId = "test",
-            SensorType = SensorType.Temperature,
-            AggregationType = AggregationType.Mean,
             CreatedAt = DateTimeOffset.UtcNow,
             Value = 1
         };

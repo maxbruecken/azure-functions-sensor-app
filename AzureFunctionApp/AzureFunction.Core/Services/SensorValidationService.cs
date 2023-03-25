@@ -23,7 +23,7 @@ public class SensorValidationService : ISensorValidationService
 
     public SensorValidationService(ISensorRepository sensorRepository,
         ISensorAlarmRepository sensorAlarmRepository,
-        ILogger<ISensorValidationService> logger)
+        ILogger<SensorValidationService> logger)
     {
         _sensorRepository = sensorRepository;
         _sensorAlarmRepository = sensorAlarmRepository;
@@ -32,13 +32,13 @@ public class SensorValidationService : ISensorValidationService
 
     public async Task ValidateSensorDataAsync(AggregatedSensorData aggregatedSensorData)
     {
-        _logger.LogDebug($"Incoming aggregated sensor data: sensor id {aggregatedSensorData.SensorBoxId}");
+        _logger.LogDebug("Incoming aggregated sensor data: sensor id {SensorBoxId}", aggregatedSensorData.Sensor.BoxId);
 
-        var sensor = await _sensorRepository.GetByBoxIdAndTypeAsync(aggregatedSensorData.SensorBoxId, aggregatedSensorData.SensorType);
+        var sensor = await _sensorRepository.GetByBoxIdAndTypeAsync(aggregatedSensorData.Sensor.BoxId, aggregatedSensorData.Sensor.Type, true);
 
         if (sensor == null)
         {
-            _logger.LogError($"No sensor found for id {aggregatedSensorData.SensorBoxId}");
+            _logger.LogError("No sensor found for id {SensorBoxId}", aggregatedSensorData.Sensor.BoxId);
             return;
         }
         await CheckSensorAndUpdateLastSeen(sensor);
@@ -48,35 +48,33 @@ public class SensorValidationService : ISensorValidationService
     public async Task CheckSensorsAndAlarmsAsync()
     {
         var deadLine = DateTimeOffset.UtcNow.AddMinutes(-5);
-        var sensors = await _sensorRepository.GetAllAsync();
-        await FireAlarmsForDeadSensors(sensors, deadLine);
+        var sensors = await _sensorRepository.GetAllAsync(true);
         await RemoveObsoleteAlarms(sensors, deadLine);
+        await FireAlarmsForDeadSensors(sensors, deadLine);
     }
 
     private async Task RemoveObsoleteAlarms(IEnumerable<Sensor> sensors, DateTimeOffset deadLine)
     {
-        var tasks = sensors
+        await sensors
             .Where(s => s.LastSeen > deadLine)
-            .ToList()
-            .Select(async s =>
+            .ToAsyncEnumerable()
+            .ForEachAwaitAsync(async s =>
             {
-                var sensorAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatusAsync(s.BoxId, s.Type, AlarmStatus.Dead);
+                var sensorAlarm= s.Alarms.FirstOrDefault(a => a.Status == SensorAlarmStatus.Dead);
                 if (sensorAlarm == null)
                 {
                     return;
                 }
                 await _sensorAlarmRepository.DeleteAsync(sensorAlarm);
             });
-        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     private async Task FireAlarmsForDeadSensors(IEnumerable<Sensor> sensors, DateTimeOffset deadLine)
     {
-        var tasks = sensors
-            .Where(s => s.LastSeen < deadLine)
-            .ToList()
-            .Select(s => CreateSensorAlarm(s, AlarmStatus.Dead, true));
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        await sensors
+            .Where(s => s.LastSeen < deadLine && s.Alarms.All(a => a.Status != SensorAlarmStatus.Dead))
+            .ToAsyncEnumerable()
+            .ForEachAwaitAsync(s => CreateSensorAlarm(s, SensorAlarmStatus.Dead, true));
     }
 
     private async Task CheckSensorAndUpdateLastSeen(Sensor sensor)
@@ -94,24 +92,21 @@ public class SensorValidationService : ISensorValidationService
         }
         if (aggregatedSensorData.Value < sensor.Min || aggregatedSensorData.Value > sensor.Max)
         {
-            await CreateSensorAlarm(sensor, AlarmStatus.InvalidData);
+            await CreateSensorAlarm(sensor, SensorAlarmStatus.InvalidData);
         }
     }
 
-    private async Task CreateSensorAlarm(Sensor sensor, AlarmStatus alarmStatus, bool singleton = false)
+    private async Task CreateSensorAlarm(Sensor sensor, SensorAlarmStatus alarmStatus, bool singleton = false)
     {
         if (singleton)
         {
-            var existingAlarm = await _sensorAlarmRepository.GetBySensorBoxIdAndSensorTypeAndStatusAsync(sensor.BoxId, sensor.Type, alarmStatus);
+            var existingAlarm = sensor.Alarms.FirstOrDefault(x => x.Status == alarmStatus);
             if (existingAlarm != null) return;
         }
-        var sensorAlarm = new SensorAlarm
+        var sensorAlarm = new SensorAlarm(sensor)
         {
-            SensorBoxId = sensor.BoxId,
-            SensorType = sensor.Type,
             Status = alarmStatus
         };
         await _sensorAlarmRepository.InsertAsync(sensorAlarm);
     }
-
 }

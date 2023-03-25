@@ -1,51 +1,58 @@
-﻿using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
-using Azure.Data.Tables;
+using AzureFunction.Core.DbContext;
+using AzureFunction.Core.Entities;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Mappers;
 using AzureFunction.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AzureFunction.Core.Repositories;
 
 public class SensorAlarmRepository : ISensorAlarmRepository
 {
-    private readonly string _tableName;
-    private readonly TableServiceClient _client;
+    private readonly SensorAppContext _context;
 
-    public SensorAlarmRepository(string connectionString, string tableName)
+    public SensorAlarmRepository(SensorAppContext context)
     {
-        _tableName = tableName;
-        _client = new TableServiceClient(connectionString);
-    }
-
-    public async Task<SensorAlarm?> GetBySensorBoxIdAndSensorTypeAndStatusAsync(string sensorBoxId, SensorType sensorType, AlarmStatus status)
-    {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        var sensorTypeString = sensorType.ToString("G");
-        var alarmStatusString = status.ToString("G");
-        var entityPages = table.QueryAsync<TableEntity>($"{nameof(TableEntity.PartitionKey)} eq '{sensorBoxId}' and {nameof(SensorAlarm.SensorType)} eq '{sensorTypeString}' and {nameof(SensorAlarm.Status)} eq '{alarmStatusString}'");
-        return (await entityPages.AsPages().FirstOrDefaultAsync())?.Values.Select(SensorAlarmMapper.Map).FirstOrDefault();
+        _context = context;
     }
 
     public async Task InsertAsync(SensorAlarm alarm)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        await table.UpsertEntityAsync(SensorAlarmMapper.Map(alarm));
+        var entity = SensorAlarmMapper.Map(alarm);
+        var sensorEntity = await _context.Set<SensorEntity>().SingleOrDefaultAsync(x => x.BoxId == entity.Sensor.BoxId && x.Type == entity.Sensor.Type)
+            ?? throw new InvalidOperationException("Sensor not found");
+        entity.Sensor = sensorEntity;
+        await _context.Set<SensorAlarmEntity>().AddAsync(entity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(SensorAlarm alarm)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        await table.UpsertEntityAsync(SensorAlarmMapper.Map(alarm));
+        var existingEntity = await GetExistingEntity(alarm.Sensor.BoxId, alarm.Sensor.Type, alarm.Status) ?? throw new InvalidOperationException("Sensor alarm not found");
+        SensorAlarmMapper.Update(alarm, existingEntity);
+        _context.Set<SensorAlarmEntity>().Update(existingEntity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(SensorAlarm alarm)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        await table.DeleteEntityAsync(alarm.SensorBoxId, alarm.Identifier);
+        var existingEntity = await GetExistingEntity(alarm.Sensor.BoxId, alarm.Sensor.Type, alarm.Status);
+        if (existingEntity is null)
+        {
+            return;
+        }
+
+        _context.Set<SensorAlarmEntity>().Remove(existingEntity);
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task<SensorAlarmEntity?> GetExistingEntity(string sensorBoxId, SensorType sensorType, SensorAlarmStatus status)
+    {
+        var entity = await _context.Set<SensorAlarmEntity>()
+            .Include(x => x.Sensor)
+            .FirstOrDefaultAsync(x => x.Sensor.BoxId == sensorBoxId && x.Sensor.Type == sensorType && x.Status == status);
+        return entity;
     }
 }

@@ -1,31 +1,58 @@
 using System;
-using Azure.Data.Tables;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using AzureFunction.Core.Entities;
 using AzureFunction.Core.Models;
 
 namespace AzureFunction.Core.Mappers;
 
 public static class SensorMapper
 {
-    public static Sensor Map(TableEntity entity)
+    [return: NotNullIfNotNull(nameof(entity))]
+    public static Sensor? Map(SensorEntity? entity, bool skipAlarms = false)
     {
-        return new Sensor
+        return entity is null
+            ? null
+            : new Sensor(entity.BoxId, entity.Type)
+            {
+                Information = new SensorInformation(entity.Information.Manufacturer, entity.Information.ModelNumber, entity.Information.SerialNumber),
+                LastSeen = entity.LastSeen ?? DateTimeOffset.MinValue,
+                Max = entity.Max,
+                Min = entity.Min,
+                Alarms = skipAlarms ? Array.Empty<SensorAlarm>() : entity.Alarms.Select(x => SensorAlarmMapper.Map(x, entity)).ToImmutableList()
+            };
+    }
+
+    public static SensorEntity Map(Sensor model)
+    {
+        return new SensorEntity
         {
-            BoxId = entity.PartitionKey,
-            Type = Enum.Parse<SensorType>(entity.RowKey),
-            LastSeen = entity.GetDateTimeOffset(nameof(Sensor.LastSeen)) ?? DateTimeOffset.MinValue,
-            Max = entity.GetDouble(nameof(Sensor.Max)) ?? 0,
-            Min = entity.GetDouble(nameof(Sensor.Min)) ?? 0
+            BoxId = model.BoxId,
+            Type = model.Type,
+            Information = new SensorInformationEntity
+            {
+                Manufacturer = model.Information.Manufacturer,
+                ModelNumber = model.Information.ModelNumber,
+                SerialNumber = model.Information.SerialNumber
+            },
+            LastSeen = model.LastSeen,
+            Max = model.Max,
+            Min = model.Min
         };
     }
 
-    public static TableEntity Map(Sensor sensor)
+    public static void Update(Sensor model, SensorEntity existingEntity)
     {
-        var entity = new TableEntity(sensor.BoxId, sensor.Type.ToString("G"))
+        existingEntity.Information = new SensorInformationEntity
         {
-            [nameof(Sensor.Max)] = sensor.Max, 
-            [nameof(Sensor.Min)] = sensor.Min, 
-            [nameof(Sensor.LastSeen)] = sensor.LastSeen
+            Id = existingEntity.Id,
+            Manufacturer = model.Information.Manufacturer,
+            ModelNumber = model.Information.ModelNumber,
+            SerialNumber = model.Information.SerialNumber
         };
-        return entity;
+        existingEntity.LastSeen = model.LastSeen;
+        existingEntity.Max = model.Max;
+        existingEntity.Min = model.Min;
     }
 }

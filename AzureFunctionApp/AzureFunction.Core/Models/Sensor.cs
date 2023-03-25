@@ -1,26 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace AzureFunction.Core.Models;
 
 public class Sensor
 {
-    public Sensor()
-    {
-    }
-        
     public Sensor(string boxId, SensorType type)
     {
         BoxId = boxId;
         Type = type;
     }
 
-    public string BoxId { get; set; } = null!;
+    public string BoxId { get; }
 
-    public SensorType Type { get; set; }
+    public SensorType Type { get; }
 
-    public double Min { get; set; }
+    public SensorInformation Information { get; set; } = new(string.Empty, string.Empty, string.Empty);
 
-    public double Max { get; set; }
+    public double Min { get; init; }
 
-    public DateTimeOffset LastSeen { get; set; } = new(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    public double Max { get; init; }
+
+    public DateTimeOffset LastSeen { get; set; }
+
+    public IReadOnlyCollection<SensorAlarm> Alarms { get; set; } = Array.Empty<SensorAlarm>();
 }

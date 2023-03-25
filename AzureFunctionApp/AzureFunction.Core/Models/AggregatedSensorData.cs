@@ -1,14 +1,19 @@
 ﻿using System;
+// ReSharper disable InconsistentNaming
 
 namespace AzureFunction.Core.Models;
 
 public class AggregatedSensorData
 {
-    public string SensorBoxId { get; set; } = null!;
+    public AggregatedSensorData(Sensor sensor, AggregationType aggregationType)
+    {
+        Sensor = sensor;
+        AggregationType = aggregationType;
+    }
 
-    public SensorType SensorType { get; set; }
-
-    public AggregationType AggregationType { get; set; }
+    public Sensor Sensor { get; }
+    
+    public AggregationType AggregationType { get; }
 
     public DateTimeOffset CreatedAt { get; set; }
 

@@ -6,5 +6,8 @@
     "BypassAuthentication": true,
     "JwtTokenMetadataAddress": "",
     "JwtTokenValidAudience": ""
+  },
+  "ConnectionStrings": {
+    "SensorAppDatabase": "Host=localhost;Port=5432;User ID=postgres;Password=postgres;Database=sensorapp"
   }
 }

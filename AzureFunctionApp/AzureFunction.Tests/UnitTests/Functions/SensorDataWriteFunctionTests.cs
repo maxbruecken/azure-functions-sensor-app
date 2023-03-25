@@ -5,24 +5,21 @@ using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Models;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
-namespace AzureFunction.Tests.Functions;
+namespace AzureFunction.Tests.UnitTests.Functions;
 
-[TestClass]
 public class SensorDataWriteFunctionTests
 {
-    [TestMethod]
+    [Fact]
     public async Task WritesAggregatedData()
     {
         var writeService = A.Fake<ISensorDataService>();
         var function = new SensorDataWriteFunction(writeService, A.Fake<ILogger<SensorDataWriteFunction>>());
 
-        var aggregatedSensorData = new AggregatedSensorData
+        var sensor = new Sensor("test", SensorType.Temperature);
+        var aggregatedSensorData = new AggregatedSensorData(sensor, AggregationType.Mean)
         {
-            SensorBoxId = "test",
-            SensorType = SensorType.Temperature,
-            AggregationType = AggregationType.Mean,
             CreatedAt = DateTimeOffset.UtcNow,
             Value = 1
         };

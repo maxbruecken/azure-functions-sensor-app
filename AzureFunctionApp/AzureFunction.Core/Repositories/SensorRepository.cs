@@ -1,58 +1,65 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using Azure.Data.Tables;
+using AzureFunction.Core.DbContext;
+using AzureFunction.Core.Entities;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Mappers;
 using AzureFunction.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AzureFunction.Core.Repositories;
 
 public class SensorRepository : ISensorRepository
 {
-    private readonly string _tableName;
-    private readonly TableServiceClient _client;
+    private readonly SensorAppContext _context;
 
-    public SensorRepository(string connectionString, string tableName)
+    public SensorRepository(SensorAppContext context)
     {
-        _tableName = tableName;
-        _client = new TableServiceClient(connectionString);
+        _context = context;
     }
 
-    public async Task<Sensor?> GetByBoxIdAndTypeAsync(string boxId, SensorType type)
+    public async Task<Sensor?> GetByBoxIdAndTypeAsync(string boxId, SensorType type, bool includeAlarms = false)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        var sensorTypeString = type.ToString("G");
-        var entityPages = table.QueryAsync<TableEntity>(x => x.PartitionKey == boxId && x.RowKey == sensorTypeString);
-        return (await entityPages.AsPages().FirstOrDefaultAsync())?.Values.Select(SensorMapper.Map).FirstOrDefault();
+        var entity = await TryGetExistingEntityEntity(boxId, type, includeAlarms);
+        return SensorMapper.Map(entity);
     }
 
-    public async Task<IEnumerable<Sensor>> GetAllAsync()
+    public async Task<IReadOnlyCollection<Sensor>> GetAllAsync(bool includeAlarms = false)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        var entityPages = table.QueryAsync<TableEntity>();
-
-        return await entityPages
-            .AsPages()
-            .SelectMany(p => p.Values.Select(SensorMapper.Map).ToAsyncEnumerable())
-            .ToListAsync();
+        IQueryable<SensorEntity> query = _context.Set<SensorEntity>();
+        if (includeAlarms)
+        {
+            query = query.Include(x => x.Alarms);
+        }
+        var entities = await query.ToListAsync();
+        return entities.Select(e => SensorMapper.Map(e)!).ToImmutableList();
     }
 
     public async Task InsertAsync(Sensor sensor)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
         var entity = SensorMapper.Map(sensor);
-        await table.UpsertEntityAsync(entity);
+        await _context.Set<SensorEntity>().AddAsync(entity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Sensor sensor)
     {
-        var table = _client.GetTableClient(_tableName);
-        await table.CreateIfNotExistsAsync();
-        var entity = SensorMapper.Map(sensor);
-        await table.UpsertEntityAsync(entity);
+        var existingEntity = await TryGetExistingEntityEntity(sensor.BoxId, sensor.Type) ?? throw new InvalidOperationException("Sensor not found");
+        SensorMapper.Update(sensor, existingEntity);
+        _context.Set<SensorEntity>().Update(existingEntity);
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task<SensorEntity?> TryGetExistingEntityEntity(string boxId, SensorType type, bool includeAlarms = false)
+    {
+        IQueryable<SensorEntity> query = _context.Set<SensorEntity>();
+        if (includeAlarms)
+        {
+            query = query.Include(x => x.Alarms);
+        }
+        return await query.SingleOrDefaultAsync(x => x.BoxId == boxId && x.Type == type);
     }
 }

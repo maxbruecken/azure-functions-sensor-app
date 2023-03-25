@@ -1,30 +1,34 @@
-using System;
-using Azure.Data.Tables;
+using AzureFunction.Core.Entities;
 using AzureFunction.Core.Models;
 
 namespace AzureFunction.Core.Mappers;
 
 public static class SensorAlarmMapper
 {
-    public static SensorAlarm Map(TableEntity entity)
+    public static SensorAlarm Map(SensorAlarmEntity entity, SensorEntity sensorEntity)
     {
-        return new SensorAlarm
+        var sensor = SensorMapper.Map(sensorEntity, true);
+        return new SensorAlarm(sensor, entity.Identifier)
         {
-            SensorBoxId = entity.PartitionKey,
-            Identifier = entity.RowKey,
-            SensorType = Enum.Parse<SensorType>(entity.GetString(nameof(SensorAlarm.SensorType))),
-            Status = Enum.Parse<AlarmStatus>(entity.GetString(nameof(SensorAlarm.Status))),
-            FiredAt = entity.Timestamp ?? DateTimeOffset.MinValue
+            Status = entity.Status,
+            FiredAt = entity.FiredAt
         };
     }
 
-    public static TableEntity Map(SensorAlarm alarm)
+    public static SensorAlarmEntity Map(SensorAlarm model)
     {
-        return new TableEntity(alarm.SensorBoxId, alarm.Identifier)
+        return new SensorAlarmEntity
         {
-            [nameof(SensorAlarm.SensorType)] = alarm.SensorType.ToString("G"),
-            [nameof(SensorAlarm.Status)] = alarm.Status.ToString("G"),
-            Timestamp = alarm.FiredAt
+            Sensor = SensorMapper.Map(model.Sensor),
+            Identifier = model.Identifier,
+            Status = model.Status,
+            FiredAt = model.FiredAt
         };
+    }
+
+    public static void Update(SensorAlarm model, SensorAlarmEntity existingEntity)
+    {
+        existingEntity.Status = model.Status;
+        existingEntity.FiredAt = model.FiredAt;
     }
 }

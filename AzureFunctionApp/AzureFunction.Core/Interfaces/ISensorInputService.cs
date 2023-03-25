@@ -6,5 +6,5 @@ namespace AzureFunction.Core.Interfaces;
 
 public interface ISensorInputService
 {
-    Task<IEnumerable<AggregatedSensorData>> ProcessInputAsync(SensorInput input);
+    IAsyncEnumerable<AggregatedSensorData> ProcessInputAsync(SensorInput input);
 }

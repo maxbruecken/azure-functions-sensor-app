@@ -1,10 +1,12 @@
 ﻿using AzureFunction.App;
+using AzureFunction.Core.DbContext;
 using AzureFunction.Core.Interfaces;
 using AzureFunction.Core.Repositories;
 using AzureFunction.Core.Services;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -19,11 +21,14 @@ public class Startup : FunctionsStartup, IWebJobsStartup2
     {
         builder.Services
             .AddLogging(c => c.AddConsole())
-            .AddScoped<ISensorRepository>(p => 
-                new SensorRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensors"))
-            .AddScoped<ISensorAlarmRepository>(p => 
-                new SensorAlarmRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensoralarms"))
-            .AddScoped<ISensorDataRepository>(p => new SensorDataRepository(p.GetRequiredService<IConfiguration>()["AzureWebJobsStorage"], "sensordata"))
+            .AddDbContextFactory<SensorAppContext>((p, b) =>
+            {
+                var configuration = p.GetRequiredService<IConfiguration>();
+                b.UseNpgsql(configuration.GetConnectionString("SensorAppDatabase"));
+            })
+            .AddScoped<ISensorRepository, SensorRepository>()
+            .AddScoped<ISensorAlarmRepository, SensorAlarmRepository>()
+            .AddScoped<ISensorDataRepository, SensorDataRepository>()
             .AddScoped<ISensorInputService, SensorInputService>()
             .AddScoped<ISensorValidationService, SensorValidationService>()
             .AddScoped<ISensorDataService, SensorDataService>()

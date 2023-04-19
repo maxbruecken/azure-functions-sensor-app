@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AzureFunction.Core.Entities;
 using AzureFunction.Core.Models;
+using AzureFunction.Core.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -69,6 +70,95 @@ public class SensorAppContextTests : DatabaseTestBase
             var action = () => query.ToListAsync();
 
             await action.Should().NotThrowAsync();
+        });
+    }
+
+    [Fact]
+    public async Task DoesNotDeleteAlarmsIfNotLoadedExplicitly()
+    {
+        var sensor = new Sensor("test", SensorType.Temperature);
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var repository = new SensorRepository(context);
+            await repository.InsertAsync(sensor);
+            var alarmRepository = new SensorAlarmRepository(context);
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow, Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-1), Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-2), Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-3), Status = SensorAlarmStatus.Dead });
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Include(x => x.Alarms)
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().HaveCount(4);
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>().Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type).FirstAsync();
+            firstPersistedSensor.Alarms.Should().BeEmpty();
+            firstPersistedSensor.LastSeen = DateTimeOffset.UtcNow;
+            context.Set<SensorEntity>().Update(firstPersistedSensor);
+            await context.SaveChangesAsync();
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Include(x => x.Alarms)
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().HaveCount(4);
+        });
+    }
+
+    [Fact]
+    public async Task DeletesAlarmsIfLoadedExplicitlyAndRemoved()
+    {
+        var sensor = new Sensor("test", SensorType.Temperature);
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var repository = new SensorRepository(context);
+            await repository.InsertAsync(sensor);
+            var alarmRepository = new SensorAlarmRepository(context);
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow, Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-1), Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-2), Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-3), Status = SensorAlarmStatus.Dead });
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Include(x => x.Alarms)
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().HaveCount(4);
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Include(x => x.Alarms)
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().HaveCount(4);
+            firstPersistedSensor.Alarms.RemoveAt(0);
+            context.Set<SensorEntity>().Update(firstPersistedSensor);
+            await context.SaveChangesAsync();
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Include(x => x.Alarms)
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().HaveCount(3);
         });
     }
 

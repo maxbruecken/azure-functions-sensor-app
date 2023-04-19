@@ -162,6 +162,48 @@ public class SensorAppContextTests : DatabaseTestBase
         });
     }
 
+    [Fact]
+    public async Task InsertsAlarmsIfNotLoadedExplicitlyAndAdded()
+    {
+        var sensor = new Sensor("test", SensorType.Temperature);
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var repository = new SensorRepository(context);
+            await repository.InsertAsync(sensor);
+            var alarmRepository = new SensorAlarmRepository(context);
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow, Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-1), Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-2), Status = SensorAlarmStatus.InvalidData });
+            await alarmRepository.InsertAsync(new SensorAlarm(sensor) { FiredAt = DateTimeOffset.UtcNow.AddDays(-3), Status = SensorAlarmStatus.Dead });
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().BeEmpty();
+            firstPersistedSensor.Alarms.Add(new SensorAlarmEntity
+            {
+                Sensor = firstPersistedSensor,
+                Identifier = Guid.NewGuid().ToString(),
+                Status = SensorAlarmStatus.InvalidData,
+                FiredAt = DateTimeOffset.UtcNow
+            });
+            context.Set<SensorEntity>().Update(firstPersistedSensor);
+            await context.SaveChangesAsync();
+        });
+
+        await InvokeOperationOnFreshContext(async context =>
+        {
+            var firstPersistedSensor = await context.Set<SensorEntity>()
+                .Include(x => x.Alarms)
+                .Where(s => s.BoxId == sensor.BoxId && s.Type == sensor.Type)
+                .FirstAsync();
+            firstPersistedSensor.Alarms.Should().HaveCount(5);
+        });
+    }
+
     private async Task SeedDatabase()
     {
         await InvokeOperationOnFreshContext(async context =>
